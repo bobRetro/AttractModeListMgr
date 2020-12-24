@@ -36,8 +36,7 @@ class Ui_Dialog(object):
         self.treeWidget.setObjectName("treeWidget")
         self.treeWidget.headerItem().setText(0, "Rom")
         self.treeWidget.headerItem().setText(1, "Game")
-        self.treeWidget.headerItem().setText(2, "CloneOf")
-        self.treeWidget.headerItem().setText(3, "Status")
+        self.treeWidget.headerItem().setText(2, "Status")
         self.amDirBtn = QtWidgets.QPushButton(Dialog)
         self.amDirBtn.setGeometry(QtCore.QRect(430, 40, 21, 21))
         self.amDirBtn.setObjectName("amDirBtn")
@@ -102,7 +101,6 @@ class Ui_Dialog(object):
                         wordlist = line.split(';')
                         romname = "{0}".format(wordlist[0].strip())
                         title = "{0}".format(wordlist[1].strip())
-                        cloneOf = wordlist[3].strip()
                         try:
                             ret = subprocess.run(["e:\\mame\\mame64", romname, "-verifyroms", "-rompath", "e:\\mame\\roms"], stdout=subprocess.PIPE, text=True, shell=True)
                             validCnt += 1
@@ -118,9 +116,8 @@ class Ui_Dialog(object):
                             self.treeWidget.addTopLevelItem(QTreeWidgetItem(idx-1))
                             self.treeWidget.topLevelItem(idx-1).setText(0, romname)
                             self.treeWidget.topLevelItem(idx-1).setText(1, title)
-                            self.treeWidget.topLevelItem(idx-1).setText(2, cloneOf)
                             wordlist = ret.stdout.split('\n')
-                            self.treeWidget.topLevelItem(idx-1).setText(3, wordlist[len(wordlist)-2])
+                            self.treeWidget.topLevelItem(idx-1).setText(2, wordlist[len(wordlist)-2])
                             tl = self.treeWidget.topLevelItem(idx-1)
                             if ret.returncode != 0:
                                 i = 0
@@ -128,7 +125,7 @@ class Ui_Dialog(object):
                                     if i < len(wordlist)-2 and w != "":
                                         msg = w.split(':')
                                         childItem = QTreeWidgetItem()
-                                        childItem.setText(3, msg[1].strip())
+                                        childItem.setText(2, msg[1].strip())
                                         tl.insertChild(tl.childCount(), childItem)
                                     i += 1
                         except:
@@ -144,7 +141,7 @@ class Ui_Dialog(object):
                        
                     self.progressBar.setValue(idx)                  
                     line = fp.readline()
-                    if idx >= 100:
+                    if idx >= 10:
                         self.progressBar.setValue(100)
                         break
             of.close()
