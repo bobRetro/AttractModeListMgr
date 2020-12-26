@@ -1,1 +1,1 @@
-py -m PyQt5.uic.pyuic AttractModeMameListMgr.ui -o test2.py -x
+py -m PyQt5.uic.pyuic AttractModeMameListMgr.ui -o dialog.py -x
