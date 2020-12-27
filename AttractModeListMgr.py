@@ -23,7 +23,9 @@ class amConfig:
             self.outFilePath = test["outFilePath"]
             self.mameExe = test["mameExe"]
         
-class Ui_Dialog(object):
+class Ui_Dialog(QWidget):
+    fileHeader = str()
+    lineDict = dict()
     configData = amConfig()
     outfilepath = 'e:\\AttractMode\\romlists\\MameValid.txt'
     configfile = 'AttractModeListMgr.cfg'
@@ -54,10 +56,11 @@ class Ui_Dialog(object):
         self.treeWidget.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
         self.treeWidget.setColumnCount(4)
         self.treeWidget.setObjectName("treeWidget")
-        self.treeWidget.headerItem().setText(0, "Rom")
-        self.treeWidget.headerItem().setText(1, "Game")
-        self.treeWidget.headerItem().setText(2, "CloneOf")
-        self.treeWidget.headerItem().setText(3, "Status")
+        self.treeWidget.headerItem().setText(0, "1")
+        self.treeWidget.headerItem().setText(1, "2")
+        self.treeWidget.headerItem().setText(2, "3")
+        self.treeWidget.headerItem().setText(3, "4")
+        self.treeWidget.headerItem().setText(4, "5")
         self.amDirBtn = QtWidgets.QPushButton(Dialog)
         self.amDirBtn.setGeometry(QtCore.QRect(430, 10, 21, 21))
         self.amDirBtn.setObjectName("amDirBtn")
@@ -78,16 +81,27 @@ class Ui_Dialog(object):
         self.mameExeBtn.setGeometry(QtCore.QRect(430, 40, 21, 21))
         self.mameExeBtn.setObjectName("mameExeBtn")
         self.loadListBtn = QtWidgets.QPushButton(Dialog)
-        self.loadListBtn.setGeometry(QtCore.QRect(470, 10, 93, 21))
+        self.loadListBtn.setGeometry(QtCore.QRect(650, 10, 93, 21))
         self.loadListBtn.setObjectName("loadListBtn")
         self.saveConfigBtn = QtWidgets.QPushButton(Dialog)
-        self.saveConfigBtn.setGeometry(QtCore.QRect(570, 10, 93, 21))
+        self.saveConfigBtn.setGeometry(QtCore.QRect(460, 10, 81, 21))
         self.saveConfigBtn.setObjectName("saveConfigBtn")
-
+        self.saveMame2Btn = QtWidgets.QPushButton(Dialog)
+        self.saveMame2Btn.setGeometry(QtCore.QRect(650, 40, 93, 21))
+        self.saveMame2Btn.setObjectName("saveMame2Btn")
+        
+        self.treeWidget.headerItem().setText(0, "Game")
+        self.treeWidget.headerItem().setText(1, "Variation")
+        self.treeWidget.headerItem().setText(2, "Rom")
+        self.treeWidget.headerItem().setText(3, "CloneOf")
+        self.treeWidget.headerItem().setText(4, "Status")
+        
         self.amDirBtn.clicked.connect(self.openAmDirDialog)
-        self.startBtn.clicked.connect(self.processList2)
+        self.startBtn.clicked.connect(self.processList)
         self.loadListBtn.clicked.connect(self.loadList)
         self.saveConfigBtn.clicked.connect(self.saveConfig)
+        self.mameExeBtn.clicked.connect(self.openMameExeDialog)
+        self.saveMame2Btn.clicked.connect(self.saveMame2)
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -107,6 +121,7 @@ class Ui_Dialog(object):
         self.mameExeBtn.setText(_translate("Dialog", "..."))
         self.loadListBtn.setText(_translate("Dialog", "Load Mame.txt"))
         self.saveConfigBtn.setText(_translate("Dialog", "Save Config"))
+        self.saveMame2Btn.setText(_translate("Dialog", "Save Mame2.txt"))
 
     def saveConfig(self):
         self.configData.amDir = self.amDir.text()
@@ -139,6 +154,59 @@ class Ui_Dialog(object):
         if fileName:
             self.amDir.setText(os.path.normpath(fileName))
 
+    def openMameExeDialog(self):
+        try:
+            options = QFileDialog.Options()
+            options |= QFileDialog.DontUseNativeDialog
+            dirName = os.path.dirname(os.path.realpath(self.mameExe.text()))
+            if os.path.isdir(dirName):
+                tempDir = dirName
+            else:
+                tempDir = 'c:\\'
+            fileName, _ = QFileDialog.getOpenFileName(self, 'Mame Exe', tempDir, "Exe files (*.exe)")
+        except:
+            print("Oops!", sys.exc_info()[0], "occurred.")
+        if os.path.isfile(fileName):
+            self.mameExe.setText(os.path.normpath(fileName))
+
+    def saveMame2(self):
+        root = self.treeWidget.invisibleRootItem()
+        child_count = root.childCount()
+        self.progressBar.setMaximum(child_count)
+        fileToOpen = os.path.join(self.amDir.text(), "romlists\\Mame2.txt")
+        of = open(fileToOpen, "w")
+
+        of.write(self.fileHeader)
+        for idx in range(child_count):
+            item = root.child(idx)
+            romname = item.text(2)
+            if item.checkState(0) == QtCore.Qt.Checked:
+                of.write(self.lineDict[romname])
+
+        of.close()
+
+    def getVariation(self, title):
+        var = ''
+        begIdx = -1
+        endIdx = -1
+        depth = 0
+        newTitle = title
+        for i in reversed(range(len(title))):
+            if title[i] == ')':
+                depth += 1
+                if endIdx == -1:
+                    endIdx = i
+            elif title[i] == '(':
+                depth -= 1
+                if depth == 0:
+                    begIdx = i
+                    break
+        if begIdx > -1 and endIdx > -1:
+            var = title[begIdx+1:endIdx]
+        if begIdx > 0:
+            newTitle = title[0:begIdx-1].strip()
+        return var, newTitle;
+            
     def loadList(self):
         idx = 0
         validCnt = 0
@@ -146,15 +214,25 @@ class Ui_Dialog(object):
         self.progressBar.setMinimum(1)
         self.progressBar.setMaximum(100)
         if cnt > 1:
+            self.treeWidget.clear()
+            self.lineDict.clear()
             of = open(self.outfilepath, "w")
             fileToOpen = os.path.join(self.amDir.text(), "romlists\\Mame.txt")
             with open(fileToOpen) as fp:
                 line = fp.readline()
                 while line:
-                    if idx > 0:
+                    if idx == 0:
+                        self.fileHeader = line
+                    else:
                         wordlist = line.split(';')
                         romname = "{0}".format(wordlist[0].strip())
                         title = "{0}".format(wordlist[1].strip())
+
+                        variation, newTitle = self.getVariation(title)
+                        try:
+                            self.lineDict[romname] = line
+                        except:
+                            print(sys.exc_info())
                         cloneOf = wordlist[3].strip()
                     
                         rowcount = self.treeWidget.topLevelItemCount()
@@ -162,10 +240,10 @@ class Ui_Dialog(object):
                             self.treeWidget.addTopLevelItem(QTreeWidgetItem(idx-1))
                             treeItem = self.treeWidget.topLevelItem(idx-1)
                             treeItem.setFlags(treeItem.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable)
-                            treeItem
-                            treeItem.setText(0, romname)
-                            treeItem.setText(1, title)
-                            treeItem.setText(2, cloneOf)
+                            treeItem.setText(0, newTitle)
+                            treeItem.setText(1, variation)
+                            treeItem.setText(2, romname)
+                            treeItem.setText(3, cloneOf)
                             treeItem.setCheckState(0, Qt.Checked)
                         except:
                             print("Oops!", sys.exc_info()[0], "occurred.")
@@ -183,14 +261,19 @@ class Ui_Dialog(object):
                     if idx >= 20:
                         self.progressBar.setValue(100)
                         break
+        self.treeWidget.setSortingEnabled(True)
+        self.treeWidget.sortByColumn(3, Qt.AscendingOrder)
+        self.treeWidget.sortByColumn(0, Qt.AscendingOrder)
+        self.treeWidget.setSortingEnabled(False)
 
-    def processList2(self):
+
+    def processList(self):
         root = self.treeWidget.invisibleRootItem()
         child_count = root.childCount()
         self.progressBar.setMaximum(child_count)
         for idx in range(child_count):
             item = root.child(idx)
-            romname = item.text(0)
+            romname = item.text(2)
             try:
                 ret = subprocess.run(["e:\\mame\\mame64", romname, "-verifyroms", "-rompath", "e:\\mame\\roms"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
                 if ret.stdout != "":
@@ -201,92 +284,28 @@ class Ui_Dialog(object):
                 for i, l in reversed(linelist):
                     wl = l.split(' ')
                     if wl[0] == "romset":
-                        item.setText(3, l)
+                        item.setText(4, l)
                         lastLineIdx = i
                         break
 
                 if ret.returncode != 0:
                     item.setCheckState(0, Qt.Unchecked)
-                    for i, w in linelist:
-                        if i == lastLineIdx:
-                            break
-                        msg = w.split(':')
-                        if len(msg) > 1:
-                            m = msg[1].strip()
-                        else:
-                            m = w.strip()
-                        childItem = QTreeWidgetItem()
-                        childItem.setText(3, m)
-                        item.insertChild(item.childCount(), childItem)
+##                    for i, w in linelist:
+##                        if i == lastLineIdx:
+##                            break
+##                        msg = w.split(':')
+##                        if len(msg) > 1:
+##                            m = msg[1].strip()
+##                        else:
+##                            m = w.strip()
+##                        childItem = QTreeWidgetItem()
+##                        childItem.setText(3, m)
+##                        item.insertChild(item.childCount(), childItem)
                 self.progressBar.setValue(idx+1)
                 app.processEvents()
             except:
                 print("Oops!", sys.exc_info()[0], "occurred for {}.".format(romname))
                 app.processEvents()
-
-    def processList(self):
-        idx = 0
-        validCnt = 0
-        cnt = self.getLineCount()
-        self.progressBar.setMinimum(1)
-        self.progressBar.setMaximum(cnt)
-        if cnt > 1:
-            of = open(self.outfilepath, "w")
-            fileToOpen = os.path.join(self.amDir.text(), "romlists\\Mame.txt")
-            with open(fileToOpen) as fp:
-                line = fp.readline()
-                while line:
-                    if idx > 0:
-                        wordlist = line.split(';')
-                        romname = "{0}".format(wordlist[0].strip())
-                        title = "{0}".format(wordlist[1].strip())
-                        cloneOf = wordlist[3].strip()
-                        try:
-                            ret = subprocess.run(["e:\\mame\\mame64", romname, "-verifyroms", "-rompath", "e:\\mame\\roms"], stdout=subprocess.PIPE, text=True, shell=True)
-                            validCnt += 1
-                            #print(ret)
-                            if ret.returncode == 0:
-                                of.write(line)
-                                validCnt += 1
-                        except:
-                            print("Oops!", sys.exc_info()[0], "occurred.")
-                    
-                        rowcount = self.treeWidget.topLevelItemCount()
-                        try:
-                            self.treeWidget.addTopLevelItem(QTreeWidgetItem(idx-1))
-                            self.treeWidget.topLevelItem(idx-1).setText(0, romname)
-                            self.treeWidget.topLevelItem(idx-1).setText(1, title)
-                            self.treeWidget.topLevelItem(idx-1).setText(2, cloneOf)
-                            wordlist = ret.stdout.split('\n')
-                            self.treeWidget.topLevelItem(idx-1).setText(3, wordlist[len(wordlist)-2])
-                            tl = self.treeWidget.topLevelItem(idx-1)
-                            if ret.returncode != 0:
-                                i = 0
-                                for w in wordlist:
-                                    if i < len(wordlist)-2 and w != "":
-                                        msg = w.split(':')
-                                        childItem = QTreeWidgetItem()
-                                        childItem.setText(3, msg[1].strip())
-                                        tl.insertChild(tl.childCount(), childItem)
-                                    i += 1
-                        except:
-                            print("Oops!", sys.exc_info()[0], "occurred.")
-
-                    idx += 1
-                        
-                    self.ptxt.setText("{0} / {1}".format(idx, cnt))
-                    try:
-                        app.processEvents()
-                    except:
-                        print("Oops!", sys.exc_info()[0], "occurred.")
-                       
-                    self.progressBar.setValue(idx)                  
-                    line = fp.readline()
-                    if idx >= 100:
-                        self.progressBar.setValue(100)
-                        break
-            of.close()
-            fp.close()
                 
 if __name__ == "__main__":
     import sys

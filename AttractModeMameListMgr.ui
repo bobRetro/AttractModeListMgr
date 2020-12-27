@@ -129,7 +129,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Start</string>
+    <string>Scan</string>
    </property>
   </widget>
   <widget class="QLabel" name="ptxt">
@@ -148,7 +148,7 @@
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
-  <widget class="QLineEdit" name="mameDir">
+  <widget class="QLineEdit" name="mameExe">
    <property name="geometry">
     <rect>
      <x>160</x>
@@ -158,7 +158,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLabel" name="mameDirLbl">
+  <widget class="QLabel" name="mameExeLbl">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -171,7 +171,7 @@
     <string>Mame Executable</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="mameDirBtn">
+  <widget class="QPushButton" name="mameExeBtn">
    <property name="geometry">
     <rect>
      <x>430</x>
@@ -187,7 +187,7 @@
   <widget class="QPushButton" name="loadListBtn">
    <property name="geometry">
     <rect>
-     <x>470</x>
+     <x>650</x>
      <y>10</y>
      <width>93</width>
      <height>21</height>
@@ -200,14 +200,27 @@
   <widget class="QPushButton" name="saveConfigBtn">
    <property name="geometry">
     <rect>
-     <x>570</x>
+     <x>460</x>
      <y>10</y>
-     <width>93</width>
+     <width>81</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
     <string>Save Config</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="saveMame2Btn">
+   <property name="geometry">
+    <rect>
+     <x>650</x>
+     <y>40</y>
+     <width>93</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Save Mame2.txt</string>
    </property>
   </widget>
  </widget>
