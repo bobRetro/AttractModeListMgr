@@ -28,6 +28,7 @@ class Ui_Dialog(QWidget):
     fileHeader = str()
     lineDict = dict()
     gameDict = dict()
+    headerDict = dict()
     configData = amConfig()
     outfilepath = 'e:\\AttractMode\\romlists\\MameValid.txt'
     configfile = 'AttractModeListMgr.cfg'
@@ -171,6 +172,29 @@ class Ui_Dialog(QWidget):
         if os.path.isfile(fileName):
             self.mameExe.setText(os.path.normpath(fileName))
 
+    def addDelimitedItem(self, line, value, delimiter):
+        newLine = line
+        if newLine != "":
+            newLine += delimiter
+        newLine += value
+        return newLine
+
+    def setLineStatus(self, line, status):
+        newLine = ""
+        colList = line.split(';')
+        for i,h in enumerate(self.headerDict):
+            if h == 'Status':
+                statusList = colList[i].split(',')
+                newStatus = ""
+                for s in statusList:
+                    if s != 'pass' and s != 'fail':
+                        newStatus = self.addDelimitedItem(newStatus, s, ",")
+                newStatus = self.addDelimitedItem(newStatus, status, ",")
+                newLine = self.addDelimitedItem(newLine, newStatus, ";")
+            else:
+                newLine = self.addDelimitedItem(newLine, colList[i], ";")
+        return newLine
+            
     def saveMame2(self):
         try:
             root = self.treeWidget.invisibleRootItem()
@@ -189,7 +213,10 @@ class Ui_Dialog(QWidget):
                 item = root.child(idx)
                 romname = item.text(2)
                 if item.checkState(0) == QtCore.Qt.Checked:
-                    of.write(self.lineDict[romname])
+                    newLine = self.setLineStatus(self.lineDict[romname], "pass")
+                else:
+                    newLine = self.setLineStatus(self.lineDict[romname], "fail")
+                of.write(newLine)
                 self.progressBar.setValue(pIdx)
                 self.ptxt.setText("{0} / {1}".format(pIdx, romCount))                    
                 for cIdx in range(item.childCount()):
@@ -197,7 +224,10 @@ class Ui_Dialog(QWidget):
                     child = item.child(cIdx)
                     romname = child.text(2)
                     if child.checkState(0) == QtCore.Qt.Checked:
-                        of.write(self.lineDict[romname])
+                        newLine = self.setLineStatus(self.lineDict[romname], "pass")
+                    else:
+                        newLine = self.setLineStatus(self.lineDict[romname], "fail")
+                    of.write(newLine)
                     self.progressBar.setValue(pIdx)
                     self.ptxt.setText("{0} / {1}".format(pIdx, romCount))
                 app.processEvents()
@@ -230,51 +260,71 @@ class Ui_Dialog(QWidget):
     def loadList(self):
         idx = 0
         validCnt = 0
-        cnt = self.getLineCount()
+        cnt = self.getLineCount()-1
         self.progressBar.setMinimum(1)
         self.progressBar.setMaximum(100)
         if cnt > 1:
             self.treeWidget.clear()
             self.lineDict.clear()
             self.gameDict.clear()
-##            of = open(self.outfilepath, "w")
+            self.headerDict.clear()
             fileToOpen = os.path.join(self.amDir.text(), "romlists\\Mame.txt")
             with open(fileToOpen) as fp:
                 line = fp.readline()
                 while line:
                     if idx == 0:
                         self.fileHeader = line
+                        headerlist = line.strip('# ').split(';')
+                        for i, header in enumerate(headerlist):
+                            self.headerDict[header] = i
+                        romnameCol = self.headerDict['Name']
+                        titleCol   = self.headerDict['Title']
+                        cloneofCol = self.headerDict['CloneOf']
+                        statusCol  = self.headerDict['Status']
                     else:
                         wordlist = line.split(';')
-                        romname = "{0}".format(wordlist[0].strip())
-                        title = "{0}".format(wordlist[1].strip())
-
+                        romname = wordlist[romnameCol]
+                        title   = wordlist[titleCol]
+                        cloneOf = wordlist[cloneofCol]
+                        status  = wordlist[statusCol]
+                        statusList = status.split(',')
+                        status = ''
+                        for s in statusList:
+                            if s == 'pass' or s == 'fail':
+                                status = s
+                                
                         variation, newTitle = self.getVariation(title)
                         try:
                             self.lineDict[romname] = line
                         except:
                             print(sys.exc_info())
-                        cloneOf = wordlist[3].strip()
 
                         if newTitle in self.gameDict.keys():
                             gameIdx = self.gameDict[newTitle]
                             treeItem = self.treeWidget.topLevelItem(gameIdx)
                             childItem = QTreeWidgetItem()
-                            childItem.setCheckState(0, Qt.Checked)
+                            if status == 'fail':
+                                childItem.setCheckState(0, Qt.Unchecked)
+                            else:
+                                childItem.setCheckState(0, Qt.Checked)
+                                
                             if variation == "" or cloneOf == "":
                                 childItem.setText(0, treeItem.text(0))
                                 childItem.setText(1, treeItem.text(1))
                                 childItem.setText(2, treeItem.text(2))
                                 childItem.setText(3, treeItem.text(3))
+                                childItem.setText(4, treeItem.text(4))
                                 treeItem.setText(0, newTitle)
                                 treeItem.setText(1, variation)
                                 treeItem.setText(2, romname)
                                 treeItem.setText(3, cloneOf)
+                                treeItem.setText(4, status)
                             else:
                                 childItem.setText(0, newTitle)
                                 childItem.setText(1, variation)
                                 childItem.setText(2, romname)
                                 childItem.setText(3, cloneOf)
+                                childItem.setText(4, status)
                                 
                             try:
                                 treeItem.insertChild(treeItem.childCount(), childItem)
@@ -291,7 +341,11 @@ class Ui_Dialog(QWidget):
                                 treeItem.setText(1, variation)
                                 treeItem.setText(2, romname)
                                 treeItem.setText(3, cloneOf)
-                                treeItem.setCheckState(0, Qt.Checked)
+                                treeItem.setText(4, status)
+                                if status == 'fail':
+                                    treeItem.setCheckState(0, Qt.Unchecked)
+                                else:
+                                    treeItem.setCheckState(0, Qt.Checked)                                
                             except:
                                 traceback.print_exc()
                     idx += 1
@@ -299,14 +353,15 @@ class Ui_Dialog(QWidget):
                     self.ptxt.setText("{0} / {1}".format(idx-1, cnt))
                     self.progressBar.setValue(int(idx/cnt*100))
                     try:
-                        app.processEvents()
+                        if idx%100 == 0 or idx == cnt:
+                            app.processEvents()
                     except:
                         print("Oops!", sys.exc_info()[0], "occurred.")
                        
                     line = fp.readline()
-                    if idx >= 201:
-                        self.progressBar.setValue(100)
-                        break
+##                    if idx >= 21:
+##                        self.progressBar.setValue(100)
+##                        break
         self.treeWidget.setSortingEnabled(True)
         self.treeWidget.sortByColumn(3, Qt.AscendingOrder)
         self.treeWidget.sortByColumn(0, Qt.AscendingOrder)
@@ -342,7 +397,11 @@ class Ui_Dialog(QWidget):
                 returncode, statusMsg = self.processRom(romname)
                 if returncode != 0:
                     item.setCheckState(0, Qt.Unchecked)
-                item.setText(4, statusMsg)
+                    item.setText(4, 'fail')
+                else:
+                    item.setText(4, 'pass')
+                    
+##                item.setText(4, statusMsg)
                 for cIdx in range(item.childCount()):
                     pIdx += 1
                     child = item.child(cIdx)
@@ -350,6 +409,9 @@ class Ui_Dialog(QWidget):
                     returncode, statusMsg = self.processRom(romname)
                     if returncode != 0:
                         child.setCheckState(0, Qt.Unchecked)
+                        child.setText(4, 'fail')
+                    else:
+                        child.setText(4, 'pass')                        
                 self.progressBar.setValue(pIdx)
                 self.ptxt.setText("{0} / {1}".format(pIdx, romCount))
                 app.processEvents()
