@@ -199,7 +199,7 @@
     </widget>
    </item>
    <item row="1" column="5">
-    <widget class="QPushButton" name="saveMame2Btn">
+    <widget class="QPushButton" name="saveMameBtn">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -207,7 +207,7 @@
       </sizepolicy>
      </property>
      <property name="text">
-      <string>Save Mame2.txt</string>
+      <string>Save Mame.txt</string>
      </property>
     </widget>
    </item>

@@ -3,42 +3,24 @@ import sys
 import subprocess
 import os.path
 import json
-import pickle
+##import progress
 
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from PyQt5.QtWidgets import *
 from PyQt5.Qt import *
+from ProgressDialog import ProgressDialog
+from AmConfig import AmConfig
 
-class amConfig:
-    def __init__(self):    
-        self.amDir = 'e:\\AttractMode'
-        self.outFilePath = 'MameValidated.txt'
-        self.mameExe = 'mame64.exe'
-        
-    def saveJSON(self, cfgFileName):
-        with open(cfgFileName, "w") as data_file:
-            jsonString = json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
-            linelist = jsonString.split('\n')
-            for line in linelist:
-                data_file.write(line+"\n")
-    
-    def loadJSON(self, cfgFileName):
-        with open(cfgFileName, "r") as data_file:
-            test = json.load(data_file)
-            self.amDir = test["amDir"]
-            self.outFilePath = test["outFilePath"]
-            self.mameExe = test["mameExe"]
-        
 class Ui_Dialog(QWidget):
     fileHeader = str()
     lineDict = dict()
     gameDict = dict()
     headerDict = dict()
-    configData = amConfig()
+    configData = AmConfig()
     outfilepath = 'e:\\AttractMode\\romlists\\MameValid.txt'
     configfile = 'AttractModeMameListMgr.cfg'
+    firstLoad = True
 
-    
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(768, 406)
@@ -92,10 +74,6 @@ class Ui_Dialog(QWidget):
         self.mameExeBtn.setSizePolicy(sizePolicy)
         self.mameExeBtn.setObjectName("mameExeBtn")
         self.gridLayout.addWidget(self.mameExeBtn, 1, 2, 1, 1)
-        self.progressBar = QtWidgets.QProgressBar(Dialog)
-        self.progressBar.setProperty("value", 0)
-        self.progressBar.setObjectName("progressBar")
-        self.gridLayout.addWidget(self.progressBar, 3, 1, 1, 4)
         self.mameExe = QtWidgets.QLineEdit(Dialog)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -146,14 +124,14 @@ class Ui_Dialog(QWidget):
         self.loadListBtn.setSizePolicy(sizePolicy)
         self.loadListBtn.setObjectName("loadListBtn")
         self.gridLayout.addWidget(self.loadListBtn, 0, 5, 1, 1)
-        self.saveMame2Btn = QtWidgets.QPushButton(Dialog)
+        self.saveMameBtn = QtWidgets.QPushButton(Dialog)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.saveMame2Btn.sizePolicy().hasHeightForWidth())
-        self.saveMame2Btn.setSizePolicy(sizePolicy)
-        self.saveMame2Btn.setObjectName("saveMame2Btn")
-        self.gridLayout.addWidget(self.saveMame2Btn, 1, 5, 1, 1)
+        sizePolicy.setHeightForWidth(self.saveMameBtn.sizePolicy().hasHeightForWidth())
+        self.saveMameBtn.setSizePolicy(sizePolicy)
+        self.saveMameBtn.setObjectName("saveMameBtn")
+        self.gridLayout.addWidget(self.saveMameBtn, 1, 5, 1, 1)
         self.expColBtn = QtWidgets.QPushButton(Dialog)
         self.expColBtn.setObjectName("expColBtn")
         self.gridLayout.addWidget(self.expColBtn, 1, 3, 1, 1)
@@ -169,7 +147,7 @@ class Ui_Dialog(QWidget):
         self.loadListBtn.clicked.connect(self.loadList)
         self.saveConfigBtn.clicked.connect(self.saveConfig)
         self.mameExeBtn.clicked.connect(self.openMameExeDialog)
-        self.saveMame2Btn.clicked.connect(self.saveMame2)
+        self.saveMameBtn.clicked.connect(self.saveMame)
         self.dupBtn.clicked.connect(self.findDuplicates)
         self.cloneBtn.clicked.connect(self.unselectClones)
         self.expColBtn.clicked.connect(self.expColTree)
@@ -198,7 +176,7 @@ class Ui_Dialog(QWidget):
         self.mameExeBtn.setText(_translate("Dialog", "..."))
         self.loadListBtn.setText(_translate("Dialog", "Load Mame.txt"))
         self.saveConfigBtn.setText(_translate("Dialog", "Save Config"))
-        self.saveMame2Btn.setText(_translate("Dialog", "Save Mame2.txt"))
+        self.saveMameBtn.setText(_translate("Dialog", "Save Mame.txt"))
         self.dupBtn.setText(_translate("Dialog", "Find Duplicates"))
         self.cloneBtn.setText(_translate("Dialog", "Unselect Clones"))
         self.expColBtn.setText(_translate("Dialog", "Expand"))
@@ -306,15 +284,22 @@ class Ui_Dialog(QWidget):
                     newLine = self.addDelimitedItem(newLine, colList[i], ";")
         return newLine
             
-    def saveMame2(self):
+    def saveMame(self):
+        try:
+            d = QtWidgets.QDialog()
+            dui = ProgressDialog()
+            dui.setupUi(d)
+            d.show()
+        except:
+            traceback.print_exc()        
         try:
             root = self.treeWidget.invisibleRootItem()
             titleCount = root.childCount()
             romCount = 0
             for idx in range(titleCount):
                 romCount += root.child(idx).childCount()            
-            self.progressBar.setMaximum(romCount)
-            fileToOpen = os.path.join(self.amDir.text(), "romlists\\Mame2.txt")
+            dui.setProgressRange(1, romCount)
+            fileToOpen = os.path.join(self.amDir.text(), "romlists\\Mame.txt")
             of = open(fileToOpen, "w")
 
             of.write(self.fileHeader)
@@ -332,7 +317,7 @@ class Ui_Dialog(QWidget):
                     else:
                         newLine = self.setCheckedStatus(newLine, "excluded")
                     of.write(newLine+'\n')
-                    self.progressBar.setValue(pIdx)
+                    dui.setProgressValue(pIdx)
                     self.ptxt.setText("{0} / {1}".format(pIdx, romCount))
                 app.processEvents()
         except:
@@ -340,44 +325,68 @@ class Ui_Dialog(QWidget):
         of.close()
 
     def getVariation(self, title):
-        var = ''
-        begIdx = -1
-        endIdx = -1
-        depth = 0
-        newTitle = title
-        for i in reversed(range(len(title))):
-            if title[i] == ')':
-                depth += 1
-                if endIdx == -1:
-                    endIdx = i
-            elif title[i] == '(':
-                depth -= 1
-                if depth == 0:
-                    begIdx = i
-                    break
-        if begIdx > -1 and endIdx > -1:
-            var = title[begIdx+1:endIdx]
-        if begIdx > 0:
-            newTitle = title[0:begIdx-1].strip()
+        try:
+            var = ''
+            begIdx = -1
+            endIdx = -1
+            newBegIdx = -1
+            depth = 0
+            newTitle = title
+            for i in reversed(range(len(title))):
+                if title[i] == ')':
+                    depth += 1
+                    if endIdx == -1:
+                        endIdx = i
+                elif title[i] == '(':
+                    depth -= 1
+                    if depth == 0:
+                        begIdx = i
+                        if var != "":
+                            var = ' - ' + var.strip()
+                        var = title[begIdx+1:endIdx] + var
+                        newBegIdx = begIdx
+                        endIdx = -1
+                        begIdx = -1
+            if newBegIdx > 0:
+                newTitle = title[0:newBegIdx-1].strip()
+        except:
+            traceback.print_exc()
+            raise e
         return var, newTitle;
             
     def loadList(self):
+        try:
+            d = QtWidgets.QDialog()
+            dui = ProgressDialog()
+            dui.setupUi(d)
+            d.show()
+            dui.setProgressRange(1, 100)
+        except:
+            traceback.print_exc()
         idx = 0
         validCnt = 0
         cnt = self.getLineCount()-1
-        self.progressBar.setMinimum(1)
-        self.progressBar.setMaximum(100)
-        
+
         if cnt > 1:
             self.treeWidget.clear()
             self.lineDict.clear()
             self.gameDict.clear()
             self.headerDict.clear()
+            print('here 1')
+            if self.firstLoad:
+                bkpFile = os.path.join(self.amDir.text(), "romlists\\Mame.txt.bkp")
+                of = open(bkpFile, "w")
+            print('here 2')
+
             fileToOpen = os.path.join(self.amDir.text(), "romlists\\Mame.txt")
             self.treeWidget.setSortingEnabled(False)
             with open(fileToOpen) as fp:
                 line = fp.readline()
                 while line:
+                    if dui.isCancelled() == True:
+                        break;
+                    if self.firstLoad:
+                        of.write(line)
                     if idx == 0:
                         self.fileHeader = line
                         headerlist = line.strip('# \n').split(';')
@@ -446,7 +455,7 @@ class Ui_Dialog(QWidget):
                     idx += 1
                         
                     self.ptxt.setText("{0} / {1}".format(idx-1, cnt))
-                    self.progressBar.setValue(int(idx/cnt*100))
+                    dui.setProgressValue(int(idx/cnt*100))
                     try:
                         if idx%100 == 0 or idx == cnt:
                             app.processEvents()
@@ -454,15 +463,26 @@ class Ui_Dialog(QWidget):
                         print("Oops!", sys.exc_info()[0], "occurred.")
                        
                     line = fp.readline()
+##                    app.processEvents()
 ##                    if idx >= 21:
-##                        self.progressBar.setValue(100)
 ##                        break
+                if self.firstLoad:
+                    of.close()
+                if dui.isCancelled() == False:
+                    self.firstLoad = False
+                    self.findDuplicates()
+
         self.treeWidget.setSortingEnabled(True)
         self.treeWidget.sortByColumn(3, Qt.AscendingOrder)
         self.treeWidget.sortByColumn(0, Qt.AscendingOrder)
         self.treeWidget.resizeColumnToContents(0)
         self.treeWidget.collapseAll()
         self.expColBtn.setText("Expand")
+        try:
+            dui.setButtonText('OK')
+        except:
+            traceback.print_exc()
+#        d.exec_()
 
     def processRom(self, romname):
         ret = subprocess.run(["e:\\mame\\mame64", romname, "-verifyroms", "-rompath", "e:\\mame\\roms"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
@@ -481,6 +501,13 @@ class Ui_Dialog(QWidget):
     def processList(self):
         pIdx = 0
         try:
+            d = QtWidgets.QDialog()
+            dui = ProgressDialog()
+            dui.setupUi(d)
+            d.show()
+        except:
+            traceback.print_exc()        
+        try:
             self.treeWidget.expandAll()
             self.expColBtn.setText("Collapse")
             root = self.treeWidget.invisibleRootItem()
@@ -488,8 +515,10 @@ class Ui_Dialog(QWidget):
             romCount = 0
             for idx in range(titleCount):
                 romCount += root.child(idx).childCount()
-            self.progressBar.setMaximum(romCount)
+            dui.setProgressRange(1, romCount)
             for idx in range(titleCount):
+                if dui.isCancelled() == True:
+                    break;
                 item = root.child(idx)
                 for cIdx in range(item.childCount()):
                     pIdx += 1
@@ -501,7 +530,7 @@ class Ui_Dialog(QWidget):
                         child.setText(4, 'fail')
                     else:
                         child.setText(4, 'pass')                        
-                self.progressBar.setValue(pIdx)
+                dui.setProgressValue(pIdx)
                 self.ptxt.setText("{0} / {1}".format(pIdx, romCount))
                 app.processEvents()
         except:
@@ -515,6 +544,7 @@ class Ui_Dialog(QWidget):
             boldFont.setBold(True)
             root = self.treeWidget.invisibleRootItem()
             titleCount = root.childCount()
+            self.treeWidget.setSortingEnabled(False)
             for idx in range(titleCount):
                 item = root.child(idx)
                 if item.checkState(0) == QtCore.Qt.Unchecked:
@@ -538,6 +568,7 @@ class Ui_Dialog(QWidget):
                         item.setText(1, variation)
                         item.setText(2, romname)
                         item.setText(4, 'Good')
+            self.treeWidget.setSortingEnabled(True)
         except:
             traceback.print_exc()
 
