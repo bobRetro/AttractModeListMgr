@@ -126,6 +126,9 @@ class Ui_Dialog(object):
         self.saveMame2Btn.setSizePolicy(sizePolicy)
         self.saveMame2Btn.setObjectName("saveMame2Btn")
         self.gridLayout.addWidget(self.saveMame2Btn, 1, 5, 1, 1)
+        self.expColBtn = QtWidgets.QPushButton(Dialog)
+        self.expColBtn.setObjectName("expColBtn")
+        self.gridLayout.addWidget(self.expColBtn, 1, 3, 1, 1)
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -140,10 +143,12 @@ class Ui_Dialog(object):
         self.mameExeBtn.setText(_translate("Dialog", "..."))
         self.startBtn.setText(_translate("Dialog", "Scan"))
         self.ptxt.setText(_translate("Dialog", "TextLabel"))
+        self.treeWidget.setSortingEnabled(True)
         self.dupBtn.setText(_translate("Dialog", "Find Duplicates"))
         self.cloneBtn.setText(_translate("Dialog", "Unselect Clones"))
         self.loadListBtn.setText(_translate("Dialog", "Load Mame.txt"))
         self.saveMame2Btn.setText(_translate("Dialog", "Save Mame2.txt"))
+        self.expColBtn.setText(_translate("Dialog", "Expand"))
 
 
 if __name__ == "__main__":
