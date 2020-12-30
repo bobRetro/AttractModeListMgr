@@ -2,7 +2,7 @@ import json
 
 class AmConfig:
     def __init__(self):    
-        self.amDir = 'e:\\AttractMode'
+        self.amDir = 'AttractMode'
         self.outFilePath = 'MameValidated.txt'
         self.mameExe = 'mame64.exe'
         
@@ -15,8 +15,8 @@ class AmConfig:
     
     def loadJSON(self, cfgFileName):
         with open(cfgFileName, "r") as data_file:
-            test = json.load(data_file)
-            self.amDir = test["amDir"]
-            self.outFilePath = test["outFilePath"]
-            self.mameExe = test["mameExe"]
-
+            jsonData = json.load(data_file)
+            self.amDir = jsonData["amDir"]
+            self.outFilePath = jsonData["outFilePath"]
+            self.mameExe = jsonData["mameExe"]
+                    
