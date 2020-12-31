@@ -75,6 +75,11 @@ class Ui_Dialog(QWidget):
         self.loadListBtn.setObjectName("loadListBtn")
         self.gridLayout.addWidget(self.loadListBtn, 3, 0, 1, 1)
         self.cloneBtn = QtWidgets.QPushButton(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.cloneBtn.sizePolicy().hasHeightForWidth())
+        self.cloneBtn.setSizePolicy(sizePolicy)
         self.cloneBtn.setObjectName("cloneBtn")
         self.gridLayout.addWidget(self.cloneBtn, 3, 4, 1, 1)
         self.amDir = QtWidgets.QLineEdit(Dialog)
@@ -141,12 +146,16 @@ class Ui_Dialog(QWidget):
         self.startBtn.setSizePolicy(sizePolicy)
         self.startBtn.setObjectName("startBtn")
         self.gridLayout.addWidget(self.startBtn, 3, 5, 1, 1)
+        self.lockBtn = QtWidgets.QPushButton(Dialog)
+        self.lockBtn.setObjectName("lockBtn")
+        self.gridLayout.addWidget(self.lockBtn, 3, 6, 1, 1)
         
         self.treeWidget.headerItem().setText(0, "Game")
         self.treeWidget.headerItem().setText(1, "Variation")
         self.treeWidget.headerItem().setText(2, "Rom")
         self.treeWidget.headerItem().setText(3, "CloneOf")
         self.treeWidget.headerItem().setText(4, "Status")
+        self.treeWidget.headerItem().setText(5, "Locked")
         
         self.amDirBtn.clicked.connect(self.openAmDirDialog)
         self.startBtn.clicked.connect(self.processList)
@@ -157,6 +166,8 @@ class Ui_Dialog(QWidget):
         self.dupBtn.clicked.connect(self.findDuplicates)
         self.cloneBtn.clicked.connect(self.unselectClones)
         self.expColBtn.clicked.connect(self.expColTree)
+        self.lockBtn.clicked.connect(self.toggleLock)
+        
         self.treeWidget.setSortingEnabled(True)
 
         self.retranslateUi(Dialog)
@@ -176,19 +187,33 @@ class Ui_Dialog(QWidget):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "AttractMode Mame List Manager"))
-        self.amDirLbl.setText(_translate("Dialog", "AttractMode Directory"))        
-        self.amDirBtn.setText(_translate("Dialog", "..."))
-        self.startBtn.setText(_translate("Dialog", "Validate"))
-        self.ptxt.setText(_translate("Dialog", "TextLabel"))
-        self.mameExeLbl.setText(_translate("Dialog", "Mame Executable"))
-        self.mameExeBtn.setText(_translate("Dialog", "..."))
-        self.loadListBtn.setText(_translate("Dialog", "Load Mame.txt"))
-        self.saveConfigBtn.setText(_translate("Dialog", "Save Config"))
-        self.saveMameBtn.setText(_translate("Dialog", "Save Mame.txt"))
         self.dupBtn.setText(_translate("Dialog", "Find Duplicates"))
+        self.ptxt.setText(_translate("Dialog", "TextLabel"))
+        self.treeWidget.setSortingEnabled(True)
+        self.loadListBtn.setText(_translate("Dialog", "Load Mame.txt"))
         self.cloneBtn.setText(_translate("Dialog", "Unselect Clones"))
         self.expColBtn.setText(_translate("Dialog", "Expand"))
+        self.amDirBtn.setText(_translate("Dialog", "..."))
+        self.mameExeLbl.setText(_translate("Dialog", "Mame Executable"))
+        self.saveConfigBtn.setText(_translate("Dialog", "Save Config"))
+        self.amDirLbl.setText(_translate("Dialog", "AttractMode Directory"))
+        self.mameExeBtn.setText(_translate("Dialog", "..."))
+        self.saveMameBtn.setText(_translate("Dialog", "Save Mame.txt"))
+        self.startBtn.setText(_translate("Dialog", "Validate"))
+        self.lockBtn.setText(_translate("Dialog", "Lock Selected"))
 
+    def toggleLock(self):
+        try:
+            getSelected = self.treeWidget.selectedItems()
+            if getSelected:
+                baseNode = getSelected[0]
+                if baseNode.text(5) == "Yes":
+                    baseNode.setText(5,"No")
+                else:
+                    baseNode.setText(5,"Yes")
+        except:
+            traceback.print_exc()
+            
     def getRomPath(self, fileToOpen):
         if os.path.isfile(fileToOpen):
             romPath = ""
@@ -289,8 +314,25 @@ class Ui_Dialog(QWidget):
                 else:
                     newLine = self.addDelimitedItem(newLine, colList[i], ";")
         return newLine
-            
-    def setCheckedStatus(self, line, status):
+
+    def removeFieldVal(self, field, val):
+        newField = ""
+        valList = field.split(',')
+        for j in valList:
+            if j != val:
+                newField = self.addDelimitedItem(newField, j, ",")
+        return newField
+
+    def addFieldVal(self, field, val):
+        newField = field
+        valList = field.split(',')
+        for j in valList:
+            if j == val:
+                return newField
+        newField = self.addDelimitedItem(newField, val, ",")
+        return newField
+        
+    def setExtra(self, line, status):
         if status == '':
             newLine = line
         else:
@@ -298,10 +340,16 @@ class Ui_Dialog(QWidget):
             colList = line.split(';')
             for i,h in enumerate(self.headerDict):
                 if h == 'Extra':
-                    if status == 'included':
-                        newLine = self.addDelimitedItem(newLine, 'included', ";")
-                    else:
-                        newLine = self.addDelimitedItem(newLine, 'excluded', ";")
+                    newField = colList[i]
+                    if status == 'excluded':
+                        newField = self.addFieldVal(newField, 'excluded')
+                    elif status == 'included':
+                        newField = self.removeFieldVal(newField, 'excluded')
+                    elif status == 'locked':
+                        newField = self.addFieldVal(newField, 'locked')
+                    elif status == 'unlocked':
+                        newField = self.removeFieldVal(newField, 'locked')
+                    newLine = self.addDelimitedItem(newLine, newField, ";")
                 else:
                     newLine = self.addDelimitedItem(newLine, colList[i], ";")
         return newLine
@@ -333,11 +381,16 @@ class Ui_Dialog(QWidget):
                     child = item.child(cIdx)
                     romname = child.text(2)
                     status = child.text(4)
+                    locked = child.text(5)
                     newLine = self.setLineStatus(self.lineDict[romname], status)
                     if child.checkState(0) == QtCore.Qt.Checked:
-                        newLine = self.setCheckedStatus(newLine, "included")
+                        newLine = self.setExtra(newLine, "included")
                     else:
-                        newLine = self.setCheckedStatus(newLine, "excluded")
+                        newLine = self.setExtra(newLine, "excluded")
+                    if locked == 'Yes':
+                        newLine = self.setExtra(newLine, "locked")
+                    else:
+                        newLine = self.setExtra(newLine, "unlocked")
                     of.write(newLine+'\n')
                     dui.setProgressValue(pIdx)
                     self.ptxt.setText("{0} / {1}".format(pIdx, romCount))
@@ -375,131 +428,166 @@ class Ui_Dialog(QWidget):
             traceback.print_exc()
             raise e
         return var, newTitle;
-            
-    def loadList(self):
+
+    def addParent(self, treeItem, newTitle, romname):
+        gameIdx = self.treeWidget.topLevelItemCount()
+        self.gameDict[romname] = gameIdx
+        self.treeWidget.addTopLevelItem(QTreeWidgetItem(gameIdx))
+        treeItem = self.treeWidget.topLevelItem(gameIdx)
+        treeItem.setFlags(treeItem.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable | Qt.ItemIsTristate)
+        treeItem.setText(0, newTitle)
+        return treeItem
+
+    def addChild(self, treeItem, newTitle, variation, romname, cloneOf, status, extra):
+        childItem = QTreeWidgetItem()
+        extraList = extra.split(',')
+        checked = ''
+        locked = False
+        for c in extraList:
+            if c == 'excluded':
+                checked = c
+            if c == 'locked':
+                locked = True
+        if checked == 'excluded':
+            childItem.setCheckState(0, Qt.Unchecked)
+        else:
+            childItem.setCheckState(0, Qt.Checked)
+
+        if locked:
+            childItem.setText(5, 'Yes')
+
+        childItem.setText(0, newTitle)
+        childItem.setText(1, variation)
+        childItem.setText(2, romname)
+        childItem.setText(3, cloneOf)
+        childItem.setText(4, status)
+        
+        treeItem.insertChild(treeItem.childCount(), childItem)
+
+    def getStatus(self, status):
+        statusList = status.split(',')
+        status = ''
+        for s in statusList:
+            if s == 'pass' or s == 'fail':
+                status = s        
+        return status
+    
+    def loadTree(self):
+        romnameCol = self.headerDict['Name']
+        titleCol   = self.headerDict['Title']
+        cloneofCol = self.headerDict['CloneOf']
+        statusCol  = self.headerDict['Status']
         try:
             d = QtWidgets.QDialog()
             dui = ProgressDialog()
             dui.setupUi(d)
             d.show()
-            dui.setProgressRange(1, 100)
+            dui.setProgressRange(1, len(self.lineDict))
         except:
             traceback.print_exc()
+
         idx = 0
+        
+        for romname, line in self.lineDict.items():
+            if dui.isCancelled() == True:
+                break;
+            wordlist = line.strip('\n\r').split(';')
+            cloneOf = wordlist[cloneofCol]
+
+            if cloneOf == "":
+                try:
+                    title   = wordlist[titleCol]
+                    status  = self.getStatus(wordlist[statusCol])
+                    extra = wordlist[self.headerDict['Extra']]
+                    variation, newTitle = self.getVariation(title)
+                    treeItem = self.addParent(self.treeWidget, newTitle, romname)
+                    self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
+                    idx += 1
+                    dui.setProgressValue(idx)
+                    if idx%100 == 0:
+                        app.processEvents()
+                except:
+                    traceback.print_exc()
+                    exit()
+
+        for romname, line in self.lineDict.items():
+            if dui.isCancelled() == True:
+                break;
+            wordlist = line.strip('\n\r').split(';')
+            cloneOf = wordlist[cloneofCol]
+
+            if cloneOf != "":
+                try:
+                    title   = wordlist[titleCol]
+                    status  = self.getStatus(wordlist[statusCol])
+                    extra = wordlist[self.headerDict['Extra']]
+                    variation, newTitle = self.getVariation(title)
+                    if cloneOf in self.gameDict.keys():
+                        gameIdx = self.gameDict[cloneOf];
+                        treeItem = self.treeWidget.topLevelItem(gameIdx)
+                    else:
+                        treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf)
+                    self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
+                    idx += 1
+                    dui.setProgressValue(idx)
+                    if idx%100 == 0:
+                        app.processEvents()
+                    app.processEvents()
+                except:
+                    traceback.print_exc()
+                    exit()
+        
+    def loadList(self):
         validCnt = 0
         cnt = self.getLineCount()-1
 
-        if cnt > 1:
-            self.treeWidget.clear()
-            self.lineDict.clear()
-            self.gameDict.clear()
-            self.headerDict.clear()
-            if self.firstLoad:
-                bkpFile = os.path.join(self.amDir.text(), "romlists\\Mame.txt.bkp")
-                of = open(bkpFile, "w")
+        try:
+            if cnt > 1:
+                self.treeWidget.clear()
+                self.lineDict.clear()
+                self.gameDict.clear()
+                self.headerDict.clear()
+                if self.firstLoad:
+                    bkpFile = os.path.join(self.amDir.text(), "romlists\\Mame.txt.bkp")
+                    of = open(bkpFile, "w")
 
-            fileToOpen = os.path.join(self.amDir.text(), "romlists\\Mame.txt")
-            self.treeWidget.setSortingEnabled(False)
-            with open(fileToOpen) as fp:
-                line = fp.readline()
-                while line:
-                    if dui.isCancelled() == True:
-                        break;
-                    if self.firstLoad:
-                        of.write(line)
-                    if idx == 0:
+                fileToOpen = os.path.join(self.amDir.text(), "romlists\\Mame.txt")
+                self.treeWidget.setSortingEnabled(False)
+                with open(fileToOpen) as fp:
+                    line = fp.readline()
+                    if line:
                         self.fileHeader = line
                         headerlist = line.strip('# \n').split(';')
                         for i, header in enumerate(headerlist):
                             self.headerDict[header] = i
-                        romnameCol = self.headerDict['Name']
-                        titleCol   = self.headerDict['Title']
-                        cloneofCol = self.headerDict['CloneOf']
-                        statusCol  = self.headerDict['Status']
                     else:
-                        wordlist = line.strip('\n\r').split(';')
-                        romname = wordlist[romnameCol]
-                        title   = wordlist[titleCol]
-                        cloneOf = wordlist[cloneofCol]
-                        status  = wordlist[statusCol]
-                        statusList = status.split(',')
-                        status = ''
-                        for s in statusList:
-                            if s == 'pass' or s == 'fail':
-                                status = s
-                                
-                        variation, newTitle = self.getVariation(title)
-                        try:
-                            self.lineDict[romname] = line.strip('\n')
-                        except:
-                            print(sys.exc_info())
+                        return
 
-                        if newTitle not in self.gameDict.keys():
-                            try:
-                                gameIdx = self.treeWidget.topLevelItemCount()
-                                self.gameDict[newTitle] = gameIdx
-                                self.treeWidget.addTopLevelItem(QTreeWidgetItem(gameIdx))
-                                treeItem = self.treeWidget.topLevelItem(gameIdx)
-                                treeItem.setFlags(treeItem.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable | Qt.ItemIsTristate)
-                                treeItem.setText(0, newTitle)
-##                                brush_yellow=QBrush(Qt.yellow)
-##                                treeItem.setBackground(0,brush_yellow)
-                            except:
-                                traceback.print_exc()
-                        else:
-                            gameIdx = self.gameDict[newTitle]
-                            treeItem = self.treeWidget.topLevelItem(gameIdx)
-                        
-                        childItem = QTreeWidgetItem()
-                        extra = wordlist[self.headerDict['Extra']]
-                        extraList = extra.split(',')
-                        try:
-                            checked = ''
-                            for c in extraList:
-                                if c == 'included' or c == 'excluded':
-                                    checked = c
-                            if checked == 'excluded':
-                                childItem.setCheckState(0, Qt.Unchecked)
-                            else:
-                                childItem.setCheckState(0, Qt.Checked)
-                        except:
-                            traceback.print_exc()
-                            exit
-                        childItem.setText(0, newTitle)
-                        childItem.setText(1, variation)
-                        childItem.setText(2, romname)
-                        childItem.setText(3, cloneOf)
-                        childItem.setText(4, status)
-                        treeItem.insertChild(treeItem.childCount(), childItem)
-                        
-                    idx += 1
-                        
-                    self.ptxt.setText("{0} / {1}".format(idx-1, cnt))
-                    dui.setProgressValue(int(idx/cnt*100))
-                    try:
-                        if idx%100 == 0 or idx == cnt:
-                            app.processEvents()
-                    except:
-                        print("Oops!", sys.exc_info()[0], "occurred.")
-                       
                     line = fp.readline()
+                    while line:
+                        wordlist = line.strip('\n\r').split(';')
+                        romname = wordlist[self.headerDict['Name']]
+                        self.lineDict[romname] = line.strip('\n')
+                        line = fp.readline()
                 if self.firstLoad:
-                    of.close()
-                if dui.isCancelled() == False:
-                    self.firstLoad = False
-                    self.findDuplicates()
+                    with open(bkpFile, "w") as of:
+                        of.write(self.fileHeader)
+                        for line in self.lineDict:
+                            of.write(line)
+            self.loadTree()    
 
-        self.treeWidget.setSortingEnabled(True)
-        self.treeWidget.sortByColumn(3, Qt.AscendingOrder)
-        self.treeWidget.sortByColumn(0, Qt.AscendingOrder)
-        self.treeWidget.resizeColumnToContents(0)
-        self.treeWidget.collapseAll()
-        self.expColBtn.setText("Expand")
-        try:
-            dui.setButtonText('OK')
+            app.processEvents()
+            self.findDuplicates()
+
+            self.treeWidget.setSortingEnabled(True)
+            self.treeWidget.sortByColumn(0, Qt.AscendingOrder)
+            self.treeWidget.sortByColumn(3, Qt.AscendingOrder)
+            self.treeWidget.resizeColumnToContents(0)
+            self.treeWidget.collapseAll()
+            self.expColBtn.setText("Expand")
         except:
             traceback.print_exc()
-#        d.exec_()
+            exit()
 
     def processRom(self, romname):
         ret = subprocess.run([self.mameExe.text(), romname, "-verifyroms", "-rompath", self.romPath], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
@@ -643,7 +731,7 @@ class Ui_Dialog(QWidget):
                     if parentRom != "":
                         for cIdx in range(item.childCount()):
                             child = item.child(cIdx)
-                            if child.checkState(0) == QtCore.Qt.Checked and child.text(3) == parentRom:
+                            if child.checkState(0) == QtCore.Qt.Checked and child.text(3) == parentRom and child.text(5) != 'Yes':
                                 child.setCheckState(0, Qt.Unchecked)
             self.findDuplicates()
         except:

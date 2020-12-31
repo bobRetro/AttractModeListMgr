@@ -66,6 +66,11 @@ class Ui_Dialog(object):
         self.loadListBtn.setObjectName("loadListBtn")
         self.gridLayout.addWidget(self.loadListBtn, 3, 0, 1, 1)
         self.cloneBtn = QtWidgets.QPushButton(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.cloneBtn.sizePolicy().hasHeightForWidth())
+        self.cloneBtn.setSizePolicy(sizePolicy)
         self.cloneBtn.setObjectName("cloneBtn")
         self.gridLayout.addWidget(self.cloneBtn, 3, 4, 1, 1)
         self.amDir = QtWidgets.QLineEdit(Dialog)
@@ -132,6 +137,9 @@ class Ui_Dialog(object):
         self.startBtn.setSizePolicy(sizePolicy)
         self.startBtn.setObjectName("startBtn")
         self.gridLayout.addWidget(self.startBtn, 3, 5, 1, 1)
+        self.lockBtn = QtWidgets.QPushButton(Dialog)
+        self.lockBtn.setObjectName("lockBtn")
+        self.gridLayout.addWidget(self.lockBtn, 3, 6, 1, 1)
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -152,6 +160,7 @@ class Ui_Dialog(object):
         self.mameExeBtn.setText(_translate("Dialog", "..."))
         self.saveMameBtn.setText(_translate("Dialog", "Save Mame.txt"))
         self.startBtn.setText(_translate("Dialog", "Validate"))
+        self.lockBtn.setText(_translate("Dialog", "Lock Selected"))
 
 
 if __name__ == "__main__":

@@ -110,6 +110,12 @@
    </item>
    <item row="3" column="4">
     <widget class="QPushButton" name="cloneBtn">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="text">
       <string>Unselect Clones</string>
      </property>
@@ -226,6 +232,13 @@
      </property>
      <property name="text">
       <string>Validate</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="6">
+    <widget class="QPushButton" name="lockBtn">
+     <property name="text">
+      <string>Lock Selected</string>
      </property>
     </widget>
    </item>
