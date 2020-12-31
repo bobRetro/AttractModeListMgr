@@ -316,6 +316,8 @@ class Ui_Dialog(QWidget):
         return newLine
 
     def removeFieldVal(self, field, val):
+        if val == '':
+            return field
         newField = ""
         valList = field.split(',')
         for j in valList:
@@ -324,6 +326,8 @@ class Ui_Dialog(QWidget):
         return newField
 
     def addFieldVal(self, field, val):
+        if val == '':
+            return field
         newField = field
         valList = field.split(',')
         for j in valList:
@@ -331,70 +335,50 @@ class Ui_Dialog(QWidget):
                 return newField
         newField = self.addDelimitedItem(newField, val, ",")
         return newField
-        
-    def setExtra(self, line, status):
-        if status == '':
-            newLine = line
-        else:
-            newLine = ""
-            colList = line.split(';')
-            for i,h in enumerate(self.headerDict):
-                if h == 'Extra':
-                    newField = colList[i]
-                    if status == 'excluded':
-                        newField = self.addFieldVal(newField, 'excluded')
-                    elif status == 'included':
-                        newField = self.removeFieldVal(newField, 'excluded')
-                    elif status == 'locked':
-                        newField = self.addFieldVal(newField, 'locked')
-                    elif status == 'unlocked':
-                        newField = self.removeFieldVal(newField, 'locked')
-                    newLine = self.addDelimitedItem(newLine, newField, ";")
-                else:
-                    newLine = self.addDelimitedItem(newLine, colList[i], ";")
+
+    def setFieldVal(self, line, field, addVal, remVal):
+        newLine = ""
+        colList = line.split(';')
+        for i, h in enumerate(self.headerDict):
+            newField = colList[i]
+            if h == field:
+                newField = self.removeFieldVal(newField, remVal)
+                newField = self.addFieldVal(newField, addVal)
+            newLine = self.addDelimitedItem(newLine, newField, ';')
         return newLine
-            
+
+    def updateLineDict(self):
+        root = self.treeWidget.invisibleRootItem()
+        titleCount = root.childCount()        
+        pIdx = 0
+        for idx in range(titleCount):
+            item = root.child(idx)
+            for cIdx in range(item.childCount()):
+                pIdx += 1
+                child = item.child(cIdx)
+                romname = child.text(2)
+                status = child.text(4)
+                locked = child.text(5)
+                newLine = self.setLineStatus(self.lineDict[romname], status)
+                if child.checkState(0) == QtCore.Qt.Checked:
+                    newLine = self.setFieldVal(newLine, 'Extra', '', 'excluded')
+                else:
+                    newLine = self.setFieldVal(newLine, 'Extra', 'excluded', '')
+                if locked == 'Yes':
+                    newLine = self.setFieldVal(newLine, 'Extra', 'locked', '')
+                else:
+                    newLine = self.setFieldVal(newLine, 'Extra', '', 'locked')
+                self.lineDict[romname] = newLine
+
     def saveMame(self):
         try:
-            d = QtWidgets.QDialog()
-            dui = ProgressDialog()
-            dui.setupUi(d)
-            d.show()
-        except:
-            traceback.print_exc()        
-        try:
-            root = self.treeWidget.invisibleRootItem()
-            titleCount = root.childCount()
-            romCount = 0
-            for idx in range(titleCount):
-                romCount += root.child(idx).childCount()            
-            dui.setProgressRange(1, romCount)
+            self.updateLineDict()
             fileToOpen = os.path.join(self.amDir.text(), "romlists\\Mame.txt")
-            of = open(fileToOpen, "w")
-
-            of.write(self.fileHeader)
-            pIdx = 0
-            for idx in range(titleCount):
-                item = root.child(idx)
-                for cIdx in range(item.childCount()):
-                    pIdx += 1
-                    child = item.child(cIdx)
-                    romname = child.text(2)
-                    status = child.text(4)
-                    locked = child.text(5)
-                    newLine = self.setLineStatus(self.lineDict[romname], status)
-                    if child.checkState(0) == QtCore.Qt.Checked:
-                        newLine = self.setExtra(newLine, "included")
-                    else:
-                        newLine = self.setExtra(newLine, "excluded")
-                    if locked == 'Yes':
-                        newLine = self.setExtra(newLine, "locked")
-                    else:
-                        newLine = self.setExtra(newLine, "unlocked")
-                    of.write(newLine+'\n')
-                    dui.setProgressValue(pIdx)
-                    self.ptxt.setText("{0} / {1}".format(pIdx, romCount))
-                app.processEvents()
+            with open(fileToOpen, "w") as of:
+                of.write(self.fileHeader)
+                for line in sorted(self.lineDict.values(), key = lambda kv:kv.split(';')[self.headerDict['Title']]):
+                    of.write(line+'\n')
+            
         except:
             traceback.print_exc()
         of.close()
@@ -572,8 +556,9 @@ class Ui_Dialog(QWidget):
                 if self.firstLoad:
                     with open(bkpFile, "w") as of:
                         of.write(self.fileHeader)
-                        for line in self.lineDict:
-                            of.write(line)
+                        for line in self.lineDict.values():
+                            of.write(line+'\n')
+                    of.close()
             self.loadTree()    
 
             app.processEvents()
