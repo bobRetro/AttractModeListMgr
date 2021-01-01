@@ -14,10 +14,12 @@ from AmConfig import AmConfig
 class Ui_Dialog(QWidget):
     fileHeader = str()
     lineDict = dict()
-    gameDict = dict()
     headerDict = dict()
+    gameDict = dict()
+    titleDict = dict()
     configData = AmConfig()
     configfile = 'AttractModeMameListMgr.cfg'
+    groupMode = 'parent'
     romPath = ""
     firstLoad = True
 
@@ -26,47 +28,37 @@ class Ui_Dialog(QWidget):
         Dialog.resize(768, 470)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
         sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setVerticalStretch(1)
         sizePolicy.setHeightForWidth(Dialog.sizePolicy().hasHeightForWidth())
         Dialog.setSizePolicy(sizePolicy)
         self.gridLayout = QtWidgets.QGridLayout(Dialog)
         self.gridLayout.setObjectName("gridLayout")
-        self.dupBtn = QtWidgets.QPushButton(Dialog)
+        self.saveConfigBtn = QtWidgets.QPushButton(Dialog)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.dupBtn.sizePolicy().hasHeightForWidth())
-        self.dupBtn.setSizePolicy(sizePolicy)
-        self.dupBtn.setObjectName("dupBtn")
-        self.gridLayout.addWidget(self.dupBtn, 4, 3, 1, 1)
-        self.ptxt = QtWidgets.QLabel(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.ptxt.sizePolicy().hasHeightForWidth())
-        self.ptxt.setSizePolicy(sizePolicy)
-        self.ptxt.setAlignment(QtCore.Qt.AlignCenter)
-        self.ptxt.setObjectName("ptxt")
-        self.gridLayout.addWidget(self.ptxt, 4, 10, 1, 1)
+        sizePolicy.setHeightForWidth(self.saveConfigBtn.sizePolicy().hasHeightForWidth())
+        self.saveConfigBtn.setSizePolicy(sizePolicy)
+        self.saveConfigBtn.setObjectName("saveConfigBtn")
+        self.gridLayout.addWidget(self.saveConfigBtn, 0, 9, 1, 1)
+        self.expColBtn = QtWidgets.QPushButton(Dialog)
+        self.expColBtn.setObjectName("expColBtn")
+        self.gridLayout.addWidget(self.expColBtn, 1, 9, 1, 1)
         self.mameExe = QtWidgets.QLineEdit(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.mameExe.sizePolicy().hasHeightForWidth())
         self.mameExe.setSizePolicy(sizePolicy)
-        self.mameExe.setMinimumSize(QtCore.QSize(500, 0))
+        self.mameExe.setMinimumSize(QtCore.QSize(0, 0))
         self.mameExe.setObjectName("mameExe")
         self.gridLayout.addWidget(self.mameExe, 1, 1, 1, 7)
-        self.amDir = QtWidgets.QLineEdit(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.amDir.sizePolicy().hasHeightForWidth())
-        self.amDir.setSizePolicy(sizePolicy)
-        self.amDir.setMinimumSize(QtCore.QSize(500, 0))
-        self.amDir.setObjectName("amDir")
-        self.gridLayout.addWidget(self.amDir, 0, 1, 1, 7)
         self.treeWidget = QtWidgets.QTreeWidget(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(2)
+        sizePolicy.setHeightForWidth(self.treeWidget.sizePolicy().hasHeightForWidth())
+        self.treeWidget.setSizePolicy(sizePolicy)
         self.treeWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.treeWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.treeWidget.setColumnCount(4)
@@ -75,26 +67,16 @@ class Ui_Dialog(QWidget):
         self.treeWidget.headerItem().setText(1, "2")
         self.treeWidget.headerItem().setText(2, "3")
         self.treeWidget.headerItem().setText(3, "4")
-        self.gridLayout.addWidget(self.treeWidget, 3, 0, 1, 11)
-        self.cloneBtn = QtWidgets.QPushButton(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        self.gridLayout.addWidget(self.treeWidget, 4, 0, 1, 12)
+        self.amDir = QtWidgets.QLineEdit(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.cloneBtn.sizePolicy().hasHeightForWidth())
-        self.cloneBtn.setSizePolicy(sizePolicy)
-        self.cloneBtn.setObjectName("cloneBtn")
-        self.gridLayout.addWidget(self.cloneBtn, 4, 4, 1, 1)
-        self.expColBtn = QtWidgets.QPushButton(Dialog)
-        self.expColBtn.setObjectName("expColBtn")
-        self.gridLayout.addWidget(self.expColBtn, 1, 10, 1, 1)
-        self.loadListBtn = QtWidgets.QPushButton(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.loadListBtn.sizePolicy().hasHeightForWidth())
-        self.loadListBtn.setSizePolicy(sizePolicy)
-        self.loadListBtn.setObjectName("loadListBtn")
-        self.gridLayout.addWidget(self.loadListBtn, 4, 0, 1, 1)
+        sizePolicy.setHeightForWidth(self.amDir.sizePolicy().hasHeightForWidth())
+        self.amDir.setSizePolicy(sizePolicy)
+        self.amDir.setMinimumSize(QtCore.QSize(0, 0))
+        self.amDir.setObjectName("amDir")
+        self.gridLayout.addWidget(self.amDir, 0, 1, 1, 7)
         self.mameExeLbl = QtWidgets.QLabel(Dialog)
         self.mameExeLbl.setObjectName("mameExeLbl")
         self.gridLayout.addWidget(self.mameExeLbl, 1, 0, 1, 1)
@@ -107,6 +89,26 @@ class Ui_Dialog(QWidget):
         self.mameExeBtn.setMaximumSize(QtCore.QSize(25, 16777215))
         self.mameExeBtn.setObjectName("mameExeBtn")
         self.gridLayout.addWidget(self.mameExeBtn, 1, 8, 1, 1)
+        self.amDirLbl = QtWidgets.QLabel(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.amDirLbl.sizePolicy().hasHeightForWidth())
+        self.amDirLbl.setSizePolicy(sizePolicy)
+        self.amDirLbl.setObjectName("amDirLbl")
+        self.gridLayout.addWidget(self.amDirLbl, 0, 0, 1, 1)
+        self.searchLabel = QtWidgets.QLabel(Dialog)
+        self.searchLabel.setObjectName("searchLabel")
+        self.gridLayout.addWidget(self.searchLabel, 2, 0, 1, 1)
+        self.searchLine = QtWidgets.QLineEdit(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.searchLine.sizePolicy().hasHeightForWidth())
+        self.searchLine.setSizePolicy(sizePolicy)
+        self.searchLine.setMinimumSize(QtCore.QSize(0, 0))
+        self.searchLine.setObjectName("searchLine")
+        self.gridLayout.addWidget(self.searchLine, 2, 1, 1, 7)
         self.amDirBtn = QtWidgets.QPushButton(Dialog)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -116,58 +118,6 @@ class Ui_Dialog(QWidget):
         self.amDirBtn.setMaximumSize(QtCore.QSize(25, 16777215))
         self.amDirBtn.setObjectName("amDirBtn")
         self.gridLayout.addWidget(self.amDirBtn, 0, 8, 1, 1)
-        self.saveConfigBtn = QtWidgets.QPushButton(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.saveConfigBtn.sizePolicy().hasHeightForWidth())
-        self.saveConfigBtn.setSizePolicy(sizePolicy)
-        self.saveConfigBtn.setObjectName("saveConfigBtn")
-        self.gridLayout.addWidget(self.saveConfigBtn, 0, 10, 1, 1)
-        self.amDirLbl = QtWidgets.QLabel(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.amDirLbl.sizePolicy().hasHeightForWidth())
-        self.amDirLbl.setSizePolicy(sizePolicy)
-        self.amDirLbl.setObjectName("amDirLbl")
-        self.gridLayout.addWidget(self.amDirLbl, 0, 0, 1, 1)
-        self.startBtn = QtWidgets.QPushButton(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.startBtn.sizePolicy().hasHeightForWidth())
-        self.startBtn.setSizePolicy(sizePolicy)
-        self.startBtn.setObjectName("startBtn")
-        self.gridLayout.addWidget(self.startBtn, 4, 5, 1, 1)
-        self.saveMameBtn = QtWidgets.QPushButton(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.saveMameBtn.sizePolicy().hasHeightForWidth())
-        self.saveMameBtn.setSizePolicy(sizePolicy)
-        self.saveMameBtn.setObjectName("saveMameBtn")
-        self.gridLayout.addWidget(self.saveMameBtn, 4, 1, 1, 1)
-        self.lockBtn = QtWidgets.QPushButton(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lockBtn.sizePolicy().hasHeightForWidth())
-        self.lockBtn.setSizePolicy(sizePolicy)
-        self.lockBtn.setObjectName("lockBtn")
-        self.gridLayout.addWidget(self.lockBtn, 4, 6, 1, 1)
-        self.searchLabel = QtWidgets.QLabel(Dialog)
-        self.searchLabel.setObjectName("searchLabel")
-        self.gridLayout.addWidget(self.searchLabel, 2, 0, 1, 1)
-        self.searchLine = QtWidgets.QLineEdit(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.searchLine.sizePolicy().hasHeightForWidth())
-        self.searchLine.setSizePolicy(sizePolicy)
-        self.searchLine.setMinimumSize(QtCore.QSize(500, 0))
-        self.searchLine.setObjectName("searchLine")
-        self.gridLayout.addWidget(self.searchLine, 2, 1, 1, 7)
         self.searchBtn = QtWidgets.QPushButton(Dialog)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -177,15 +127,91 @@ class Ui_Dialog(QWidget):
         self.searchBtn.setMaximumSize(QtCore.QSize(25, 16777215))
         self.searchBtn.setObjectName("searchBtn")
         self.gridLayout.addWidget(self.searchBtn, 2, 8, 1, 1)
+        self.startBtn = QtWidgets.QPushButton(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.startBtn.sizePolicy().hasHeightForWidth())
+        self.startBtn.setSizePolicy(sizePolicy)
+        self.startBtn.setObjectName("startBtn")
+        self.gridLayout.addWidget(self.startBtn, 5, 3, 1, 1)
+        self.saveMameBtn = QtWidgets.QPushButton(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.saveMameBtn.sizePolicy().hasHeightForWidth())
+        self.saveMameBtn.setSizePolicy(sizePolicy)
+        self.saveMameBtn.setObjectName("saveMameBtn")
+        self.gridLayout.addWidget(self.saveMameBtn, 5, 1, 1, 1)
+        self.cloneBtn = QtWidgets.QPushButton(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.cloneBtn.sizePolicy().hasHeightForWidth())
+        self.cloneBtn.setSizePolicy(sizePolicy)
+        self.cloneBtn.setObjectName("cloneBtn")
+        self.gridLayout.addWidget(self.cloneBtn, 5, 2, 1, 1)
+        self.ptxt = QtWidgets.QLabel(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.ptxt.sizePolicy().hasHeightForWidth())
+        self.ptxt.setSizePolicy(sizePolicy)
+        self.ptxt.setMinimumSize(QtCore.QSize(150, 0))
+        self.ptxt.setAlignment(QtCore.Qt.AlignCenter)
+        self.ptxt.setObjectName("ptxt")
+        self.gridLayout.addWidget(self.ptxt, 5, 9, 1, 2)
+        self.loadListBtn = QtWidgets.QPushButton(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.loadListBtn.sizePolicy().hasHeightForWidth())
+        self.loadListBtn.setSizePolicy(sizePolicy)
+        self.loadListBtn.setObjectName("loadListBtn")
+        self.gridLayout.addWidget(self.loadListBtn, 5, 0, 1, 1)
+        self.frame = QtWidgets.QFrame(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
+        self.frame.setSizePolicy(sizePolicy)
+        self.frame.setMinimumSize(QtCore.QSize(80, 60))
+        self.frame.setFrameShape(QtWidgets.QFrame.Panel)
+        self.frame.setFrameShadow(QtWidgets.QFrame.Plain)
+        self.frame.setLineWidth(1)
+        self.frame.setMidLineWidth(1)
+        self.frame.setObjectName("frame")
+        self.label = QtWidgets.QLabel(self.frame)
+        self.label.setGeometry(QtCore.QRect(11, -4, 58, 28))
+        self.label.setObjectName("label")
+        self.parentBtn = QtWidgets.QRadioButton(self.frame)
+        self.parentBtn.setGeometry(QtCore.QRect(5, 22, 56, 17))
+        self.parentBtn.setObjectName("parentBtn")
+        self.titleBtn = QtWidgets.QRadioButton(self.frame)
+        self.titleBtn.setGeometry(QtCore.QRect(5, 39, 44, 17))
+        self.titleBtn.setObjectName("titleBtn")
+        self.gridLayout.addWidget(self.frame, 0, 10, 2, 1)
+        self.dupBtn = QtWidgets.QPushButton(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.dupBtn.sizePolicy().hasHeightForWidth())
+        self.dupBtn.setSizePolicy(sizePolicy)
+        self.dupBtn.setObjectName("dupBtn")
+        self.gridLayout.addWidget(self.dupBtn, 2, 9, 1, 1)
         self.clearSearchBtn = QtWidgets.QPushButton(Dialog)
         self.clearSearchBtn.setObjectName("clearSearchBtn")
         self.gridLayout.addWidget(self.clearSearchBtn, 2, 10, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout.addItem(spacerItem, 0, 9, 1, 1)
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout.addItem(spacerItem1, 1, 9, 1, 1)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout.addItem(spacerItem2, 2, 9, 1, 1)
+        self.gridLayout.addItem(spacerItem, 1, 11, 1, 1)
+        self.lockBtn = QtWidgets.QPushButton(Dialog)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.lockBtn.sizePolicy().hasHeightForWidth())
+        self.lockBtn.setSizePolicy(sizePolicy)
+        self.lockBtn.setObjectName("lockBtn")
+        self.gridLayout.addWidget(self.lockBtn, 5, 4, 1, 1)
         
         self.treeWidget.headerItem().setText(0, "Game")
         self.treeWidget.headerItem().setText(1, "Variation")
@@ -204,6 +230,10 @@ class Ui_Dialog(QWidget):
         self.cloneBtn.clicked.connect(self.unselectClones)
         self.expColBtn.clicked.connect(self.expColTree)
         self.lockBtn.clicked.connect(self.toggleLock)
+        self.parentBtn.setChecked(True)
+        self.groupMode = 'parent'
+        self.parentBtn.toggled.connect(self.toggleMode)
+        self.titleBtn.toggled.connect(self.toggleMode)
         self.searchBtn.clicked.connect(self.searchList)
         self.clearSearchBtn.clicked.connect(self.clearSearch)
         self.searchLine.textEdited.connect(self.searchLineClicked);
@@ -229,24 +259,38 @@ class Ui_Dialog(QWidget):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "AttractMode Mame List Manager"))
-        self.dupBtn.setText(_translate("Dialog", "Find Duplicates"))
-        self.ptxt.setText(_translate("Dialog", "TextLabel"))
-        self.treeWidget.setSortingEnabled(True)
-        self.cloneBtn.setText(_translate("Dialog", "Unselect Clones"))
-        self.expColBtn.setText(_translate("Dialog", "Expand"))
-        self.loadListBtn.setText(_translate("Dialog", "Load Mame.txt"))
-        self.mameExeLbl.setText(_translate("Dialog", "Mame Executable"))
-        self.mameExeBtn.setText(_translate("Dialog", "..."))
-        self.amDirBtn.setText(_translate("Dialog", "..."))
+        self.clearSearchBtn.setText(_translate("Dialog", "Clear Search"))
         self.saveConfigBtn.setText(_translate("Dialog", "Save Config"))
+        self.expColBtn.setText(_translate("Dialog", "Expand"))
+        self.ptxt.setText(_translate("Dialog", "TextLabel"))
+        self.saveMameBtn.setText(_translate("Dialog", "Save Mame.txt"))
+        self.dupBtn.setText(_translate("Dialog", "Find Duplicates"))
+        self.treeWidget.setSortingEnabled(True)
+        self.mameExeLbl.setText(_translate("Dialog", "Mame Executable"))
+        self.loadListBtn.setText(_translate("Dialog", "Load Mame.txt"))
+        self.cloneBtn.setText(_translate("Dialog", "Unselect Clones"))
+        self.mameExeBtn.setText(_translate("Dialog", "..."))
         self.amDirLbl.setText(_translate("Dialog", "AttractMode Directory"))
         self.startBtn.setText(_translate("Dialog", "Validate"))
-        self.saveMameBtn.setText(_translate("Dialog", "Save Mame.txt"))
-        self.lockBtn.setText(_translate("Dialog", "Lock Selected"))
         self.searchLabel.setText(_translate("Dialog", "Search"))
+        self.lockBtn.setText(_translate("Dialog", "Lock Selected"))
+        self.amDirBtn.setText(_translate("Dialog", "..."))
         self.searchBtn.setText(_translate("Dialog", "Go"))
-        self.clearSearchBtn.setText(_translate("Dialog", "Clear Search"))
+        self.label.setText(_translate("Dialog", "Group Mode"))
+        self.parentBtn.setText(_translate("Dialog", "Parent"))
+        self.titleBtn.setText(_translate("Dialog", "Title"))
 
+    def toggleMode(self):
+        radioButton = self.sender()
+        if radioButton.isChecked():
+            if radioButton.objectName() == 'parentBtn':
+                self.groupMode = 'parent'
+            elif radioButton.objectName() == 'titleBtn':
+                self.groupMode = 'title'
+            self.updateLineDict()
+            self.loadTree(self.groupMode)
+
+            
     def searchLineClicked(self):
         self.searchBtn.setDefault(True)
         self.searchBtn.setAutoDefault(True)
@@ -455,7 +499,7 @@ class Ui_Dialog(QWidget):
         except:
             traceback.print_exc()
 
-    def getVariation(self, title):
+    def getTitleVariation(self, title):
         try:
             var = ''
             begIdx = -1
@@ -483,11 +527,13 @@ class Ui_Dialog(QWidget):
         except:
             traceback.print_exc()
             raise e
-        return var, newTitle;
+        return newTitle, var;
 
     def addParent(self, treeItem, newTitle, romname):
         gameIdx = self.treeWidget.topLevelItemCount()
         self.gameDict[romname] = gameIdx
+        if newTitle not in self.titleDict:
+            self.titleDict[newTitle] = gameIdx
         self.treeWidget.addTopLevelItem(QTreeWidgetItem(gameIdx))
         treeItem = self.treeWidget.topLevelItem(gameIdx)
         treeItem.setFlags(treeItem.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable | Qt.ItemIsTristate)
@@ -528,36 +574,67 @@ class Ui_Dialog(QWidget):
                 status = s        
         return status
     
-    def loadTree(self):
+    def loadTree(self, mode):
+        if len(self.lineDict) == 0:
+            return
+
+        self.treeWidget.clear()
+        app.processEvents()
+        
+        self.treeWidget.setSortingEnabled(False)
+        self.gameDict.clear()
+        self.titleDict.clear()
+
         romnameCol = self.headerDict['Name']
         titleCol   = self.headerDict['Title']
         cloneofCol = self.headerDict['CloneOf']
         statusCol  = self.headerDict['Status']
+        extraCol   = self.headerDict['Extra']
         try:
             d = QtWidgets.QDialog()
             dui = ProgressDialog()
             dui.setupUi(d)
             d.show()
-            dui.setProgressRange(1, len(self.lineDict))
+            dui.setProgressRange(1, len(self.lineDict)*2)
         except:
             traceback.print_exc()
 
         idx = 0
-        
-        for romname, line in self.lineDict.items():
-            if dui.isCancelled() == True:
-                break;
-            wordlist = line.strip('\n\r').split(';')
-            cloneOf = wordlist[cloneofCol]
 
-            if cloneOf == "":
+        for level in ('parent', 'child'):
+            for romname, line in self.lineDict.items():
                 try:
-                    title   = wordlist[titleCol]
-                    status  = self.getStatus(wordlist[statusCol])
-                    extra = wordlist[self.headerDict['Extra']]
-                    variation, newTitle = self.getVariation(title)
-                    treeItem = self.addParent(self.treeWidget, newTitle, romname)
-                    self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
+                    if dui.isCancelled() == True:
+                        break;
+                    wordlist            = line.strip('\n\r').split(';')
+                    cloneOf             = wordlist[cloneofCol]
+                    title               = wordlist[titleCol]
+                    status              = self.getStatus(wordlist[statusCol])
+                    extra               = wordlist[extraCol]
+                    newTitle, variation = self.getTitleVariation(title)
+
+                    if mode == 'parent':
+                        if level == 'parent':
+                            if cloneOf == "":
+                                treeItem = self.addParent(self.treeWidget, newTitle, romname)
+                                self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
+                        else:
+                            if cloneOf != "":
+                                if cloneOf in self.gameDict.keys():
+                                    gameIdx = self.gameDict[cloneOf];
+                                    treeItem = self.treeWidget.topLevelItem(gameIdx)
+                                else:
+                                    # Parent ROM not found, create dummy parent using cloneOf value
+                                    treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf)
+                                self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
+                    elif mode == 'title':
+                        if level == 'parent':
+                            if newTitle not in self.titleDict:
+                                treeItem = self.addParent(self.treeWidget, newTitle, romname)
+                        else:
+                            gameIdx = self.titleDict[newTitle];
+                            treeItem = self.treeWidget.topLevelItem(gameIdx)
+                            self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
                     idx += 1
                     dui.setProgressValue(idx)
                     if idx%100 == 0:
@@ -565,33 +642,7 @@ class Ui_Dialog(QWidget):
                 except:
                     traceback.print_exc()
                     exit()
-
-        for romname, line in self.lineDict.items():
-            if dui.isCancelled() == True:
-                break;
-            wordlist = line.strip('\n\r').split(';')
-            cloneOf = wordlist[cloneofCol]
-
-            if cloneOf != "":
-                try:
-                    title   = wordlist[titleCol]
-                    status  = self.getStatus(wordlist[statusCol])
-                    extra = wordlist[self.headerDict['Extra']]
-                    variation, newTitle = self.getVariation(title)
-                    if cloneOf in self.gameDict.keys():
-                        gameIdx = self.gameDict[cloneOf];
-                        treeItem = self.treeWidget.topLevelItem(gameIdx)
-                    else:
-                        treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf)
-                    self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
-                    idx += 1
-                    dui.setProgressValue(idx)
-                    if idx%100 == 0:
-                        app.processEvents()
-                    app.processEvents()
-                except:
-                    traceback.print_exc()
-                    exit()
+        self.treeWidget.setSortingEnabled(True)
         
     def loadList(self):
         validCnt = 0
@@ -631,10 +682,10 @@ class Ui_Dialog(QWidget):
                         for line in self.lineDict.values():
                             of.write(line+'\n')
                     of.close()
-            self.loadTree()    
+            self.loadTree('parent')    
 
             app.processEvents()
-            self.findDuplicates()
+##            self.findDuplicates()
 
             self.treeWidget.setSortingEnabled(True)
             self.treeWidget.sortByColumn(0, Qt.AscendingOrder)
@@ -734,13 +785,10 @@ class Ui_Dialog(QWidget):
 
     def findDuplicates(self):
         try:
-            regFont = QFont()
-            regFont.setBold(False)
-            boldFont = QFont()
-            boldFont.setBold(True)
+            self.setTreeHidden(True)
             root = self.treeWidget.invisibleRootItem()
             titleCount = root.childCount()
-            self.treeWidget.setSortingEnabled(False)
+
             for idx in range(titleCount):
                 item = root.child(idx)
                 if item.checkState(0) == QtCore.Qt.Unchecked:
@@ -752,19 +800,54 @@ class Ui_Dialog(QWidget):
                     for cIdx in range(item.childCount()):
                         child = item.child(cIdx)
                         if child.checkState(0) == QtCore.Qt.Checked:
-                            if romname != "":
-                                item.setFont(0, boldFont)
-                                romname = ""
-                                item.setText(4, 'Duplicates')
-                                break
-                            variation = child.text(1)
-                            romname = child.text(2)
-                    if romname != "":
-                        item.setFont(0, regFont)
+                            checkedCount += 1
+                            if checkedCount == 1:
+                                variation = child.text(1)
+                                romname   = child.text(2)
+                            
+                    if checkedCount > 1:
+                        item.setHidden(False)
+                    else:
                         item.setText(1, variation)
                         item.setText(2, romname)
                         item.setText(4, 'Good')
-            self.treeWidget.setSortingEnabled(True)
+                        
+                    for cIdx in range(item.childCount()):
+                        child = item.child(cIdx)
+                        if child.checkState(0) == QtCore.Qt.Checked:
+                            child.setHidden(False)
+
+##            regFont = QFont()
+##            regFont.setBold(False)
+##            boldFont = QFont()
+##            boldFont.setBold(True)
+##            root = self.treeWidget.invisibleRootItem()
+##            titleCount = root.childCount()
+##            self.treeWidget.setSortingEnabled(False)
+##            for idx in range(titleCount):
+##                item = root.child(idx)
+##                if item.checkState(0) == QtCore.Qt.Unchecked:
+##                    item.setText(4, 'Excluded')
+##                else:
+##                    romname = ""
+##                    variation = ""
+##                    checkedCount = 0
+##                    for cIdx in range(item.childCount()):
+##                        child = item.child(cIdx)
+##                        if child.checkState(0) == QtCore.Qt.Checked:
+##                            if romname != "":
+##                                item.setFont(0, boldFont)
+##                                romname = ""
+##                                item.setText(4, 'Duplicates')
+##                                break
+##                            variation = child.text(1)
+##                            romname = child.text(2)
+##                    if romname != "":
+##                        item.setFont(0, regFont)
+##                        item.setText(1, variation)
+##                        item.setText(2, romname)
+##                        item.setText(4, 'Good')
+##            self.treeWidget.setSortingEnabled(True)
         except:
             traceback.print_exc()
 
