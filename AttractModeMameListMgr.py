@@ -272,7 +272,11 @@ class Ui_Dialog(QDialog):
                     event.ignore()            
         except:
             traceback.print_exc()
-            
+
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.close()
+    
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "AttractMode Mame List Manager"))
