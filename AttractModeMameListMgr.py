@@ -11,7 +11,8 @@ from PyQt5.Qt import *
 from ProgressDialog import ProgressDialog
 from AmConfig import AmConfig
 
-class Ui_Dialog(QWidget):
+class Ui_Dialog(QDialog):
+    dataChanged = False
     fileHeader = str()
     lineDict = dict()
     headerDict = dict()
@@ -22,7 +23,7 @@ class Ui_Dialog(QWidget):
     groupMode = 'parent'
     romPath = ""
     firstLoad = True
-
+    treeLoading = False
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(768, 470)
@@ -238,9 +239,11 @@ class Ui_Dialog(QWidget):
         self.clearSearchBtn.clicked.connect(self.clearSearch)
         self.searchLine.textEdited.connect(self.searchLineClicked);
         self.setTabOrder(self.searchLine, self.searchBtn)
+        self.treeWidget.itemChanged[QTreeWidgetItem, int].connect(self.treeItemChanged)
 #        self.searchLine.focusSignal.connect(self.
-        
+
         self.treeWidget.setSortingEnabled(True)
+        self.saveMameBtn.setEnabled(False)
 
         self.retranslateUi(Dialog)
 
@@ -256,13 +259,27 @@ class Ui_Dialog(QWidget):
             
         self.loadListBtn.setFocus(Qt.NoFocusReason)
 
+    def closeEvent(self, event):
+        try:
+            if self.dataChanged:
+                reply = QMessageBox.question(self, "Unsaved Changes",
+                    "There are unsaved changes. Are you sure you want to exit?",
+                    QMessageBox.Yes,
+                    QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    event.accept()
+                else:
+                    event.ignore()            
+        except:
+            traceback.print_exc()
+            
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "AttractMode Mame List Manager"))
         self.clearSearchBtn.setText(_translate("Dialog", "Clear Search"))
         self.saveConfigBtn.setText(_translate("Dialog", "Save Config"))
         self.expColBtn.setText(_translate("Dialog", "Expand"))
-        self.ptxt.setText(_translate("Dialog", "TextLabel"))
+        self.ptxt.setText(_translate("Dialog", ""))
         self.saveMameBtn.setText(_translate("Dialog", "Save Mame.txt"))
         self.dupBtn.setText(_translate("Dialog", "Find Duplicates"))
         self.treeWidget.setSortingEnabled(True)
@@ -280,6 +297,13 @@ class Ui_Dialog(QWidget):
         self.parentBtn.setText(_translate("Dialog", "Parent"))
         self.titleBtn.setText(_translate("Dialog", "Title"))
 
+    def treeItemChanged(self, item, column):
+        if not self.treeLoading:
+            self.dataChanged = True
+            self.saveMameBtn.setEnabled(True)
+##            if item.checkState(column) == Qt.Checked:
+##                print(f'{item.text(column)} was checked')
+            
     def toggleMode(self):
         radioButton = self.sender()
         if radioButton.isChecked():
@@ -297,6 +321,7 @@ class Ui_Dialog(QWidget):
         
     def toggleLock(self):
         try:
+            self.saveMameBtn.setEnabled(True)            
             getSelected = self.treeWidget.selectedItems()
             if getSelected:
                 baseNode = getSelected[0]
@@ -495,6 +520,8 @@ class Ui_Dialog(QWidget):
                     of.write(self.fileHeader)
                     for line in sorted(self.lineDict.values(), key = lambda kv:kv.split(';')[self.headerDict['Title']]):
                         of.write(line+'\n')
+                self.dataChanged = False
+                self.saveMameBtn.setEnabled(False)
             
         except:
             traceback.print_exc()
@@ -600,7 +627,8 @@ class Ui_Dialog(QWidget):
             traceback.print_exc()
 
         idx = 0
-
+        self.treeLoading = True
+        
         for level in ('parent', 'child'):
             for romname, line in self.lineDict.items():
                 try:
@@ -642,13 +670,16 @@ class Ui_Dialog(QWidget):
                 except:
                     traceback.print_exc()
                     exit()
+        self.treeLoading = False
         self.treeWidget.setSortingEnabled(True)
+        self.ptxt.setText(str(self.treeWidget.topLevelItemCount()) + " Groups containing " + str(len(self.lineDict)) + " games")
         
     def loadList(self):
         validCnt = 0
         cnt = self.getLineCount()-1
 
         try:
+            self.saveMameBtn.setEnabled(False)
             if cnt > 1:
                 self.treeWidget.clear()
                 self.lineDict.clear()
@@ -685,7 +716,6 @@ class Ui_Dialog(QWidget):
             self.loadTree('parent')    
 
             app.processEvents()
-##            self.findDuplicates()
 
             self.treeWidget.setSortingEnabled(True)
             self.treeWidget.sortByColumn(0, Qt.AscendingOrder)
@@ -714,6 +744,25 @@ class Ui_Dialog(QWidget):
 
 ##    def msgbtn(self, i):
 ##        print("Button pressed is {}".format(i.text()))
+
+    def showWarn(self, message):
+        try:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+
+            msg.setText(message)
+#            msg.setInformativeText("This is additional information")
+            msg.setWindowTitle("Warning")
+            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            msg.buttonClicked.connect(self.msgbtn)
+                
+            retval = msg.exec_()
+            return retval
+        except:
+            traceback.print_exc()
+
+    def msgbtn(self, i):
+       print("Button pressed is:",i.text())
    
     def showErr(self, message):
         try:
@@ -880,8 +929,7 @@ class Ui_Dialog(QWidget):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    Dialog = QtWidgets.QDialog()
-    ui = Ui_Dialog()
-    ui.setupUi(Dialog)
+    Dialog = Ui_Dialog()
+    Dialog.setupUi(Dialog)
     Dialog.show()
     sys.exit(app.exec_())
