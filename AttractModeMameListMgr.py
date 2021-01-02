@@ -24,49 +24,39 @@ class Ui_MainWindow(QMainWindow):
     romPath = ""
     firstLoad = True
     treeLoading = False
-    saveAct = QAction()
-    def setupUi(self, MainWindow):
+    def _windowLayout(self):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(906, 525)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName("gridLayout")
-        self.ptxt = QtWidgets.QLabel(self.centralwidget)
+        self.dupBtn = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.ptxt.sizePolicy().hasHeightForWidth())
-        self.ptxt.setSizePolicy(sizePolicy)
-        self.ptxt.setMinimumSize(QtCore.QSize(150, 0))
-        self.ptxt.setAlignment(QtCore.Qt.AlignCenter)
-        self.ptxt.setObjectName("ptxt")
-        self.gridLayout.addWidget(self.ptxt, 4, 6, 1, 2)
-        self.startBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHeightForWidth(self.dupBtn.sizePolicy().hasHeightForWidth())
+        self.dupBtn.setSizePolicy(sizePolicy)
+        self.dupBtn.setObjectName("dupBtn")
+        self.gridLayout.addWidget(self.dupBtn, 2, 6, 1, 1)
+        self.clearSearchBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.clearSearchBtn.setObjectName("clearSearchBtn")
+        self.gridLayout.addWidget(self.clearSearchBtn, 2, 7, 1, 1)
+        self.treeWidget = QtWidgets.QTreeWidget(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.startBtn.sizePolicy().hasHeightForWidth())
-        self.startBtn.setSizePolicy(sizePolicy)
-        self.startBtn.setObjectName("startBtn")
-        self.gridLayout.addWidget(self.startBtn, 4, 3, 1, 1)
-        self.cloneBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.cloneBtn.sizePolicy().hasHeightForWidth())
-        self.cloneBtn.setSizePolicy(sizePolicy)
-        self.cloneBtn.setObjectName("cloneBtn")
-        self.gridLayout.addWidget(self.cloneBtn, 4, 2, 1, 1)
-        self.amDir = QtWidgets.QLineEdit(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.amDir.sizePolicy().hasHeightForWidth())
-        self.amDir.setSizePolicy(sizePolicy)
-        self.amDir.setMinimumSize(QtCore.QSize(0, 0))
-        self.amDir.setObjectName("amDir")
-        self.gridLayout.addWidget(self.amDir, 0, 1, 1, 4)
+        sizePolicy.setVerticalStretch(2)
+        sizePolicy.setHeightForWidth(self.treeWidget.sizePolicy().hasHeightForWidth())
+        self.treeWidget.setSizePolicy(sizePolicy)
+        self.treeWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.treeWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.treeWidget.setColumnCount(4)
+        self.treeWidget.setObjectName("treeWidget")
+        self.treeWidget.headerItem().setText(0, "1")
+        self.treeWidget.headerItem().setText(1, "2")
+        self.treeWidget.headerItem().setText(2, "3")
+        self.treeWidget.headerItem().setText(3, "4")
+        self.gridLayout.addWidget(self.treeWidget, 3, 0, 1, 10)
         self.searchLabel = QtWidgets.QLabel(self.centralwidget)
         self.searchLabel.setObjectName("searchLabel")
         self.gridLayout.addWidget(self.searchLabel, 2, 0, 1, 1)
@@ -79,6 +69,24 @@ class Ui_MainWindow(QMainWindow):
         self.mameExeBtn.setMaximumSize(QtCore.QSize(25, 16777215))
         self.mameExeBtn.setObjectName("mameExeBtn")
         self.gridLayout.addWidget(self.mameExeBtn, 1, 5, 1, 1)
+        self.amDir = QtWidgets.QLineEdit(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.amDir.sizePolicy().hasHeightForWidth())
+        self.amDir.setSizePolicy(sizePolicy)
+        self.amDir.setMinimumSize(QtCore.QSize(300, 0))
+        self.amDir.setObjectName("amDir")
+        self.gridLayout.addWidget(self.amDir, 0, 1, 1, 4)
+        self.mameExe = QtWidgets.QLineEdit(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.mameExe.sizePolicy().hasHeightForWidth())
+        self.mameExe.setSizePolicy(sizePolicy)
+        self.mameExe.setMinimumSize(QtCore.QSize(300, 0))
+        self.mameExe.setObjectName("mameExe")
+        self.gridLayout.addWidget(self.mameExe, 1, 1, 1, 4)
         self.amDirLbl = QtWidgets.QLabel(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -96,15 +104,6 @@ class Ui_MainWindow(QMainWindow):
         self.amDirBtn.setMaximumSize(QtCore.QSize(25, 16777215))
         self.amDirBtn.setObjectName("amDirBtn")
         self.gridLayout.addWidget(self.amDirBtn, 0, 5, 1, 1)
-        self.mameExe = QtWidgets.QLineEdit(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.mameExe.sizePolicy().hasHeightForWidth())
-        self.mameExe.setSizePolicy(sizePolicy)
-        self.mameExe.setMinimumSize(QtCore.QSize(0, 0))
-        self.mameExe.setObjectName("mameExe")
-        self.gridLayout.addWidget(self.mameExe, 1, 1, 1, 4)
         self.searchBtn = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -114,8 +113,6 @@ class Ui_MainWindow(QMainWindow):
         self.searchBtn.setMaximumSize(QtCore.QSize(25, 16777215))
         self.searchBtn.setObjectName("searchBtn")
         self.gridLayout.addWidget(self.searchBtn, 2, 5, 1, 1)
-        spacerItem = QtWidgets.QSpacerItem(135, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout.addItem(spacerItem, 1, 8, 1, 1)
         self.mameExeLbl = QtWidgets.QLabel(self.centralwidget)
         self.mameExeLbl.setObjectName("mameExeLbl")
         self.gridLayout.addWidget(self.mameExeLbl, 1, 0, 1, 1)
@@ -125,43 +122,9 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.searchLine.sizePolicy().hasHeightForWidth())
         self.searchLine.setSizePolicy(sizePolicy)
-        self.searchLine.setMinimumSize(QtCore.QSize(0, 0))
+        self.searchLine.setMinimumSize(QtCore.QSize(300, 0))
         self.searchLine.setObjectName("searchLine")
         self.gridLayout.addWidget(self.searchLine, 2, 1, 1, 4)
-        self.dupBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.dupBtn.sizePolicy().hasHeightForWidth())
-        self.dupBtn.setSizePolicy(sizePolicy)
-        self.dupBtn.setObjectName("dupBtn")
-        self.gridLayout.addWidget(self.dupBtn, 2, 6, 1, 1)
-        self.clearSearchBtn = QtWidgets.QPushButton(self.centralwidget)
-        self.clearSearchBtn.setObjectName("clearSearchBtn")
-        self.gridLayout.addWidget(self.clearSearchBtn, 2, 7, 1, 1)
-        self.saveMameBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.saveMameBtn.sizePolicy().hasHeightForWidth())
-        self.saveMameBtn.setSizePolicy(sizePolicy)
-        self.saveMameBtn.setObjectName("saveMameBtn")
-        self.gridLayout.addWidget(self.saveMameBtn, 4, 1, 1, 1)
-        self.treeWidget = QtWidgets.QTreeWidget(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(2)
-        sizePolicy.setHeightForWidth(self.treeWidget.sizePolicy().hasHeightForWidth())
-        self.treeWidget.setSizePolicy(sizePolicy)
-        self.treeWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.treeWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
-        self.treeWidget.setColumnCount(4)
-        self.treeWidget.setObjectName("treeWidget")
-        self.treeWidget.headerItem().setText(0, "1")
-        self.treeWidget.headerItem().setText(1, "2")
-        self.treeWidget.headerItem().setText(2, "3")
-        self.treeWidget.headerItem().setText(3, "4")
-        self.gridLayout.addWidget(self.treeWidget, 3, 0, 1, 9)
         self.expColBtn = QtWidgets.QPushButton(self.centralwidget)
         self.expColBtn.setObjectName("expColBtn")
         self.gridLayout.addWidget(self.expColBtn, 1, 6, 1, 1)
@@ -173,6 +136,8 @@ class Ui_MainWindow(QMainWindow):
         self.saveConfigBtn.setSizePolicy(sizePolicy)
         self.saveConfigBtn.setObjectName("saveConfigBtn")
         self.gridLayout.addWidget(self.saveConfigBtn, 0, 6, 1, 1)
+        spacerItem = QtWidgets.QSpacerItem(135, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.gridLayout.addItem(spacerItem, 0, 9, 1, 1)
         self.lockBtn = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -180,7 +145,23 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy.setHeightForWidth(self.lockBtn.sizePolicy().hasHeightForWidth())
         self.lockBtn.setSizePolicy(sizePolicy)
         self.lockBtn.setObjectName("lockBtn")
-        self.gridLayout.addWidget(self.lockBtn, 4, 4, 1, 1)
+        self.gridLayout.addWidget(self.lockBtn, 1, 8, 1, 1)
+        self.startBtn = QtWidgets.QPushButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.startBtn.sizePolicy().hasHeightForWidth())
+        self.startBtn.setSizePolicy(sizePolicy)
+        self.startBtn.setObjectName("startBtn")
+        self.gridLayout.addWidget(self.startBtn, 2, 8, 1, 1)
+        self.cloneBtn = QtWidgets.QPushButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.cloneBtn.sizePolicy().hasHeightForWidth())
+        self.cloneBtn.setSizePolicy(sizePolicy)
+        self.cloneBtn.setObjectName("cloneBtn")
+        self.gridLayout.addWidget(self.cloneBtn, 0, 8, 1, 1)
         self.frame = QtWidgets.QFrame(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -203,14 +184,6 @@ class Ui_MainWindow(QMainWindow):
         self.titleBtn.setGeometry(QtCore.QRect(5, 39, 44, 17))
         self.titleBtn.setObjectName("titleBtn")
         self.gridLayout.addWidget(self.frame, 0, 7, 2, 1)
-        self.loadListBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.loadListBtn.sizePolicy().hasHeightForWidth())
-        self.loadListBtn.setSizePolicy(sizePolicy)
-        self.loadListBtn.setObjectName("loadListBtn")
-        self.gridLayout.addWidget(self.loadListBtn, 4, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 906, 26))
@@ -219,20 +192,21 @@ class Ui_MainWindow(QMainWindow):
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
+        self.lockIcon = QtGui.QIcon("lock.ico")
+
+    def setupUi(self, MainWindow):
+        self._windowLayout()
         
         self.treeWidget.headerItem().setText(0, "Game")
         self.treeWidget.headerItem().setText(1, "Variation")
         self.treeWidget.headerItem().setText(2, "Rom")
         self.treeWidget.headerItem().setText(3, "CloneOf")
         self.treeWidget.headerItem().setText(4, "Status")
-        self.treeWidget.headerItem().setText(5, "Locked")
         
         self.amDirBtn.clicked.connect(self.openAmDirDialog)
         self.startBtn.clicked.connect(self.processList)
-        self.loadListBtn.clicked.connect(self.loadList)
         self.saveConfigBtn.clicked.connect(self.saveConfig)
         self.mameExeBtn.clicked.connect(self.openMameExeDialog)
-        self.saveMameBtn.clicked.connect(self.saveMame)
         self.dupBtn.clicked.connect(self.findDuplicates)
         self.cloneBtn.clicked.connect(self.unselectClones)
         self.expColBtn.clicked.connect(self.expColTree)
@@ -246,6 +220,8 @@ class Ui_MainWindow(QMainWindow):
         self.searchLine.textEdited.connect(self.searchLineClicked);
         self.setTabOrder(self.searchLine, self.searchBtn)
         self.treeWidget.itemChanged[QTreeWidgetItem, int].connect(self.treeItemChanged)
+        self.treeWidget.itemSelectionChanged.connect(self.treeItemSelected)
+        
         menubar = self.menuBar()
         style = self.style()
         icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_BrowserStop')))
@@ -273,13 +249,9 @@ class Ui_MainWindow(QMainWindow):
         fileMenu.addAction(loadAct)
         fileMenu.addAction(self.saveAct)
 
-
-#        self.statusBar().showMessage('Message in statusbar.')
-#        self.searchLine.focusSignal.connect(self.
+        fileMenu.aboutToShow.connect(self.populateFileMenu)
 
         self.treeWidget.setSortingEnabled(True)
-        self.saveMameBtn.setEnabled(False)
-        self.saveAct.setEnabled(False)
 
         self.retranslateUi(MainWindow)
 
@@ -293,8 +265,6 @@ class Ui_MainWindow(QMainWindow):
             self.amDir.setText(self.configData.amDir)
             self.mameExe.setText(self.configData.mameExe)
             
-        self.loadListBtn.setFocus(Qt.NoFocusReason)
-
     def closeEvent(self, event):
         try:
             if self.dataChanged:
@@ -309,39 +279,56 @@ class Ui_MainWindow(QMainWindow):
         except:
             traceback.print_exc()
 
-    def keyPressEvent(self, e):
-        if e.key() == Qt.Key_Escape:
-            self.close()
+##    def keyPressEvent(self, e):
+##        if e.key() == Qt.Key_Escape:
+##            self.close()
     
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "AttractMode Mame List Manager"))
-        self.clearSearchBtn.setText(_translate("Dialog", "Clear Search"))
-        self.saveConfigBtn.setText(_translate("Dialog", "Save Config"))
-        self.expColBtn.setText(_translate("Dialog", "Expand"))
-        self.ptxt.setText(_translate("Dialog", ""))
-        self.saveMameBtn.setText(_translate("Dialog", "Save Mame.txt"))
-        self.dupBtn.setText(_translate("Dialog", "Find Duplicates"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.dupBtn.setText(_translate("MainWindow", "Find Duplicates"))
+        self.clearSearchBtn.setText(_translate("MainWindow", "Clear Search"))
         self.treeWidget.setSortingEnabled(True)
-        self.mameExeLbl.setText(_translate("Dialog", "Mame Executable"))
-        self.loadListBtn.setText(_translate("Dialog", "Load Mame.txt"))
-        self.cloneBtn.setText(_translate("Dialog", "Unselect Clones"))
-        self.mameExeBtn.setText(_translate("Dialog", "..."))
-        self.amDirLbl.setText(_translate("Dialog", "AttractMode Directory"))
-        self.startBtn.setText(_translate("Dialog", "Validate"))
-        self.searchLabel.setText(_translate("Dialog", "Search"))
-        self.lockBtn.setText(_translate("Dialog", "Lock Selected"))
-        self.amDirBtn.setText(_translate("Dialog", "..."))
-        self.searchBtn.setText(_translate("Dialog", "Go"))
-        self.label.setText(_translate("Dialog", "Group Mode"))
-        self.parentBtn.setText(_translate("Dialog", "Parent"))
-        self.titleBtn.setText(_translate("Dialog", "Title"))
+        self.searchLabel.setText(_translate("MainWindow", "Search"))
+        self.mameExeBtn.setText(_translate("MainWindow", "..."))
+        self.amDirLbl.setText(_translate("MainWindow", "AttractMode Directory"))
+        self.amDirBtn.setText(_translate("MainWindow", "..."))
+        self.searchBtn.setText(_translate("MainWindow", "Go"))
+        self.mameExeLbl.setText(_translate("MainWindow", "Mame Executable"))
+        self.expColBtn.setText(_translate("MainWindow", "Expand"))
+        self.saveConfigBtn.setText(_translate("MainWindow", "Save Config"))
+        self.lockBtn.setText(_translate("MainWindow", "Lock Selected"))
+        self.startBtn.setText(_translate("MainWindow", "Validate"))
+        self.cloneBtn.setText(_translate("MainWindow", "Unselect Clones"))
+        self.label.setText(_translate("MainWindow", "Group Mode"))
+        self.parentBtn.setText(_translate("MainWindow", "Parent"))
+        self.titleBtn.setText(_translate("MainWindow", "Title"))
 
+    def populateFileMenu(self):
+        try:
+            if self.dataChanged:
+                self.saveAct.setEnabled(True)
+        except:
+            traceback.print_exc()
+
+    def treeItemSelected(self):
+        try:
+            for i in self.treeWidget.selectedItems():
+                if i.parent():
+                    self.lockBtn.setEnabled(True)
+                    line = self.lineDict[i.text(2)]
+                    extra = self.getField(line, 'Extra')
+                    if 'locked' in extra.split(','):
+                        self.lockBtn.setText('Unlock Selected')
+                    else:
+                        self.lockBtn.setText('Lock Selected')
+                else:
+                    self.lockBtn.setEnabled(False)
+        except:
+            traceback.print_exc()
     def treeItemChanged(self, item, column):
         if not self.treeLoading:
             self.dataChanged = True
-            self.saveMameBtn.setEnabled(True)
-            self.saveAct.setEnabled(True)
 ##            if item.checkState(column) == Qt.Checked:
 ##                print(f'{item.text(column)} was checked')
             
@@ -362,15 +349,22 @@ class Ui_MainWindow(QMainWindow):
         
     def toggleLock(self):
         try:
-            self.saveMameBtn.setEnabled(True)
-            self.saveAct.setEnabled(True)
             getSelected = self.treeWidget.selectedItems()
             if getSelected:
                 baseNode = getSelected[0]
-                if baseNode.text(5) == "Yes":
-                    baseNode.setText(5,"No")
-                else:
-                    baseNode.setText(5,"Yes")
+                if baseNode.parent():
+                    newLine = self.lineDict[baseNode.text(2)]
+                    style = self.style()
+                    extra = self.getField(newLine, 'Extra')
+                    if 'locked' in extra.split(','):
+                        icon = QtGui.QIcon()
+                        baseNode.setIcon(0,icon)
+                        self.lineDict[baseNode.text(2)] = self.setFieldVal(newLine, 'Extra', '', 'locked')
+                        self.lockBtn.setText('Lock Selected')
+                    else:
+                        baseNode.setIcon(0, self.lockIcon)
+                        self.lineDict[baseNode.text(2)] = self.setFieldVal(newLine, 'Extra', 'locked', '')
+                        self.lockBtn.setText('Unock Selected')
         except:
             traceback.print_exc()
 
@@ -472,13 +466,6 @@ class Ui_MainWindow(QMainWindow):
         newLine += value
         return newLine
 
-    def getFieldValue(self, field, delimiter, validValues):
-        valueList = field.split(delimiter)
-        fieldValue = ""
-        for v in valueList:
-            if v in validValues:
-                return v
-
     def setLineStatus(self, line, status):
         if status == '':
             newLine = line
@@ -507,6 +494,12 @@ class Ui_MainWindow(QMainWindow):
             if j != val:
                 newField = self.addDelimitedItem(newField, j, ",")
         return newField
+
+    def getField(self, line, field):
+        if field in self.headerDict.keys():
+            return line.split(';')[self.headerDict[field]]
+        else:
+            return None
 
     def addFieldVal(self, field, val):
         if val == '':
@@ -547,10 +540,10 @@ class Ui_MainWindow(QMainWindow):
                     newLine = self.setFieldVal(newLine, 'Extra', '', 'excluded')
                 else:
                     newLine = self.setFieldVal(newLine, 'Extra', 'excluded', '')
-                if locked == 'Yes':
-                    newLine = self.setFieldVal(newLine, 'Extra', 'locked', '')
-                else:
-                    newLine = self.setFieldVal(newLine, 'Extra', '', 'locked')
+##                if locked == 'Yes':
+##                    newLine = self.setFieldVal(newLine, 'Extra', 'locked', '')
+##                else:
+##                    newLine = self.setFieldVal(newLine, 'Extra', '', 'locked')
                 self.lineDict[romname] = newLine
 
     def saveMame(self):
@@ -563,8 +556,6 @@ class Ui_MainWindow(QMainWindow):
                     for line in sorted(self.lineDict.values(), key = lambda kv:kv.split(';')[self.headerDict['Title']]):
                         of.write(line+'\n')
                 self.dataChanged = False
-                self.saveMameBtn.setEnabled(False)
-                self.saveAct.setEnabled(False)
             
         except:
             traceback.print_exc()
@@ -626,7 +617,8 @@ class Ui_MainWindow(QMainWindow):
             childItem.setCheckState(0, Qt.Checked)
 
         if locked:
-            childItem.setText(5, 'Yes')
+            style = self.style()
+            childItem.setIcon(0, self.lockIcon)
 
         childItem.setText(0, newTitle)
         childItem.setText(1, variation)
@@ -715,15 +707,13 @@ class Ui_MainWindow(QMainWindow):
                     exit()
         self.treeLoading = False
         self.treeWidget.setSortingEnabled(True)
-        self.ptxt.setText(str(self.treeWidget.topLevelItemCount()) + " Groups containing " + str(len(self.lineDict)) + " games")
+        self.statusBar().showMessage(str(self.treeWidget.topLevelItemCount()) + " Groups containing " + str(len(self.lineDict)) + " games")
         
     def loadList(self):
         validCnt = 0
         cnt = self.getLineCount()-1
 
         try:
-            self.saveMameBtn.setEnabled(False)
-            self.saveAct.setEnabled(False)
             if cnt > 1:
                 self.treeWidget.clear()
                 self.lineDict.clear()
@@ -871,7 +861,7 @@ class Ui_MainWindow(QMainWindow):
                     else:
                         child.setText(4, 'pass')                        
                 dui.setProgressValue(pIdx)
-                self.ptxt.setText("{0} / {1}".format(pIdx, romCount))
+                self.statusBar().showMessage("{0} / {1}".format(pIdx, romCount))
                 app.processEvents()
         except:
             traceback.print_exc()
