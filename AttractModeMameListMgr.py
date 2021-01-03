@@ -9,8 +9,82 @@ from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from PyQt5.QtWidgets import *
 from PyQt5.Qt import *
 from ProgressDialog import ProgressDialog
+
 from AmConfig import AmConfig
 
+class Ui_findDlg(object):
+    def __init__(self, parent=None):
+        self.parent = parent
+    def setupUi(self, findDlg):
+        findDlg.setObjectName("findDlg")
+        findDlg.resize(400, 135)
+        findDlg.setModal(True)
+        self.buttonBox = QtWidgets.QDialogButtonBox(findDlg)
+        self.buttonBox.setGeometry(QtCore.QRect(310, 100, 71, 30))
+        self.buttonBox.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.buttonBox.setOrientation(QtCore.Qt.Vertical)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel)
+        self.buttonBox.setObjectName("buttonBox")
+        self.findLine = QtWidgets.QLineEdit(findDlg)
+        self.findLine.setGeometry(QtCore.QRect(50, 10, 241, 20))
+        self.findLine.setObjectName("findLine")
+        self.findLbl = QtWidgets.QLabel(findDlg)
+        self.findLbl.setGeometry(QtCore.QRect(10, 10, 47, 13))
+        self.findLbl.setObjectName("findLbl")
+        self.findBtn = QtWidgets.QPushButton(findDlg)
+        self.findBtn.setGeometry(QtCore.QRect(310, 10, 71, 30))
+        self.findBtn.setObjectName("findBtn")
+        self.cbxGroups = QtWidgets.QCheckBox(findDlg)
+        self.cbxGroups.setGeometry(QtCore.QRect(50, 80, 74, 17))
+        self.cbxGroups.setObjectName("cbxGroups")
+        self.cbxChildren = QtWidgets.QCheckBox(findDlg)
+        self.cbxChildren.setGeometry(QtCore.QRect(50, 100, 74, 17))
+        self.cbxChildren.setObjectName("cbxChildren")
+        self.cbxInclSiblings = QtWidgets.QCheckBox(findDlg)
+        self.cbxInclSiblings.setGeometry(QtCore.QRect(150, 40, 141, 17))
+        self.cbxInclSiblings.setObjectName("cbxInclSiblings")
+        self.cbxExactMatch = QtWidgets.QCheckBox(findDlg)
+        self.cbxExactMatch.setGeometry(QtCore.QRect(50, 40, 91, 17))
+        self.cbxExactMatch.setObjectName("cbxExactMatch")
+        self.duplicatesBtn = QtWidgets.QPushButton(findDlg)
+        self.duplicatesBtn.setGeometry(QtCore.QRect(310, 50, 71, 28))
+        self.duplicatesBtn.setObjectName("DuplicatesBtn")
+
+        self.cbxChildren.setChecked(True)
+        self.cbxGroups.setChecked(True)
+        
+        self.retranslateUi(findDlg)
+        self.buttonBox.accepted.connect(findDlg.accept)
+        self.buttonBox.rejected.connect(findDlg.reject)
+        self.findBtn.clicked.connect(self.doSearch)
+        self.findLine.textEdited.connect(self.findLineClicked)
+        self.duplicatesBtn.clicked.connect(self.findDuplicates)
+        QtCore.QMetaObject.connectSlotsByName(findDlg)
+
+    def retranslateUi(self, findDlg):
+        _translate = QtCore.QCoreApplication.translate
+        findDlg.setWindowTitle(_translate("findDlg", "Find"))
+        self.findLbl.setText(_translate("findDlg", "Find"))
+        self.findBtn.setText(_translate("findDlg", "Search"))
+        self.cbxGroups.setText(_translate("findDlg", "Groups"))
+        self.cbxChildren.setText(_translate("findDlg", "Children"))
+        self.cbxInclSiblings.setText(_translate("findDlg", "Include siblings in results"))
+        self.cbxExactMatch.setText(_translate("findDlg", "Exact Match"))
+        self.duplicatesBtn.setText(_translate("findDlg", "Duplicates"))
+        
+    def findLineClicked(self):
+        self.findBtn.setDefault(True)
+        self.findBtn.setAutoDefault(True)
+
+    def doSearch(self):
+        try:
+#            self.parent.searchLine.setText(self.findLine.text())
+            self.parent.searchList2(self.findLine.text())
+        except:
+            traceback.print_exc()
+    def findDuplicates(self):
+        self.parent.findDuplicates()
+        
 class Ui_MainWindow(QMainWindow):
     dataChanged = False
     fileHeader = str()
@@ -31,17 +105,6 @@ class Ui_MainWindow(QMainWindow):
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName("gridLayout")
-        self.dupBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.dupBtn.sizePolicy().hasHeightForWidth())
-        self.dupBtn.setSizePolicy(sizePolicy)
-        self.dupBtn.setObjectName("dupBtn")
-        self.gridLayout.addWidget(self.dupBtn, 2, 6, 1, 1)
-        self.clearSearchBtn = QtWidgets.QPushButton(self.centralwidget)
-        self.clearSearchBtn.setObjectName("clearSearchBtn")
-        self.gridLayout.addWidget(self.clearSearchBtn, 2, 7, 1, 1)
         self.treeWidget = QtWidgets.QTreeWidget(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -56,10 +119,7 @@ class Ui_MainWindow(QMainWindow):
         self.treeWidget.headerItem().setText(1, "2")
         self.treeWidget.headerItem().setText(2, "3")
         self.treeWidget.headerItem().setText(3, "4")
-        self.gridLayout.addWidget(self.treeWidget, 3, 0, 1, 10)
-        self.searchLabel = QtWidgets.QLabel(self.centralwidget)
-        self.searchLabel.setObjectName("searchLabel")
-        self.gridLayout.addWidget(self.searchLabel, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.treeWidget, 3, 0, 1, 9)
         self.mameExeBtn = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -68,7 +128,7 @@ class Ui_MainWindow(QMainWindow):
         self.mameExeBtn.setSizePolicy(sizePolicy)
         self.mameExeBtn.setMaximumSize(QtCore.QSize(25, 16777215))
         self.mameExeBtn.setObjectName("mameExeBtn")
-        self.gridLayout.addWidget(self.mameExeBtn, 1, 5, 1, 1)
+        self.gridLayout.addWidget(self.mameExeBtn, 1, 3, 1, 1)
         self.amDir = QtWidgets.QLineEdit(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -77,7 +137,7 @@ class Ui_MainWindow(QMainWindow):
         self.amDir.setSizePolicy(sizePolicy)
         self.amDir.setMinimumSize(QtCore.QSize(300, 0))
         self.amDir.setObjectName("amDir")
-        self.gridLayout.addWidget(self.amDir, 0, 1, 1, 4)
+        self.gridLayout.addWidget(self.amDir, 0, 1, 1, 2)
         self.mameExe = QtWidgets.QLineEdit(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -86,7 +146,7 @@ class Ui_MainWindow(QMainWindow):
         self.mameExe.setSizePolicy(sizePolicy)
         self.mameExe.setMinimumSize(QtCore.QSize(300, 0))
         self.mameExe.setObjectName("mameExe")
-        self.gridLayout.addWidget(self.mameExe, 1, 1, 1, 4)
+        self.gridLayout.addWidget(self.mameExe, 1, 1, 1, 2)
         self.amDirLbl = QtWidgets.QLabel(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -103,31 +163,13 @@ class Ui_MainWindow(QMainWindow):
         self.amDirBtn.setSizePolicy(sizePolicy)
         self.amDirBtn.setMaximumSize(QtCore.QSize(25, 16777215))
         self.amDirBtn.setObjectName("amDirBtn")
-        self.gridLayout.addWidget(self.amDirBtn, 0, 5, 1, 1)
-        self.searchBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.searchBtn.sizePolicy().hasHeightForWidth())
-        self.searchBtn.setSizePolicy(sizePolicy)
-        self.searchBtn.setMaximumSize(QtCore.QSize(25, 16777215))
-        self.searchBtn.setObjectName("searchBtn")
-        self.gridLayout.addWidget(self.searchBtn, 2, 5, 1, 1)
+        self.gridLayout.addWidget(self.amDirBtn, 0, 3, 1, 1)
         self.mameExeLbl = QtWidgets.QLabel(self.centralwidget)
         self.mameExeLbl.setObjectName("mameExeLbl")
         self.gridLayout.addWidget(self.mameExeLbl, 1, 0, 1, 1)
-        self.searchLine = QtWidgets.QLineEdit(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.searchLine.sizePolicy().hasHeightForWidth())
-        self.searchLine.setSizePolicy(sizePolicy)
-        self.searchLine.setMinimumSize(QtCore.QSize(300, 0))
-        self.searchLine.setObjectName("searchLine")
-        self.gridLayout.addWidget(self.searchLine, 2, 1, 1, 4)
         self.expColBtn = QtWidgets.QPushButton(self.centralwidget)
         self.expColBtn.setObjectName("expColBtn")
-        self.gridLayout.addWidget(self.expColBtn, 1, 6, 1, 1)
+        self.gridLayout.addWidget(self.expColBtn, 1, 4, 1, 1)
         self.saveConfigBtn = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -135,9 +177,9 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy.setHeightForWidth(self.saveConfigBtn.sizePolicy().hasHeightForWidth())
         self.saveConfigBtn.setSizePolicy(sizePolicy)
         self.saveConfigBtn.setObjectName("saveConfigBtn")
-        self.gridLayout.addWidget(self.saveConfigBtn, 0, 6, 1, 1)
+        self.gridLayout.addWidget(self.saveConfigBtn, 0, 4, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(135, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout.addItem(spacerItem, 0, 9, 1, 1)
+        self.gridLayout.addItem(spacerItem, 0, 8, 1, 1)
         self.lockBtn = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -145,15 +187,7 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy.setHeightForWidth(self.lockBtn.sizePolicy().hasHeightForWidth())
         self.lockBtn.setSizePolicy(sizePolicy)
         self.lockBtn.setObjectName("lockBtn")
-        self.gridLayout.addWidget(self.lockBtn, 1, 8, 1, 1)
-        self.startBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.startBtn.sizePolicy().hasHeightForWidth())
-        self.startBtn.setSizePolicy(sizePolicy)
-        self.startBtn.setObjectName("startBtn")
-        self.gridLayout.addWidget(self.startBtn, 2, 8, 1, 1)
+        self.gridLayout.addWidget(self.lockBtn, 1, 6, 1, 1)
         self.cloneBtn = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -161,7 +195,7 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy.setHeightForWidth(self.cloneBtn.sizePolicy().hasHeightForWidth())
         self.cloneBtn.setSizePolicy(sizePolicy)
         self.cloneBtn.setObjectName("cloneBtn")
-        self.gridLayout.addWidget(self.cloneBtn, 0, 8, 1, 1)
+        self.gridLayout.addWidget(self.cloneBtn, 0, 6, 1, 1)
         self.frame = QtWidgets.QFrame(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -183,7 +217,18 @@ class Ui_MainWindow(QMainWindow):
         self.titleBtn = QtWidgets.QRadioButton(self.frame)
         self.titleBtn.setGeometry(QtCore.QRect(5, 39, 44, 17))
         self.titleBtn.setObjectName("titleBtn")
-        self.gridLayout.addWidget(self.frame, 0, 7, 2, 1)
+        self.gridLayout.addWidget(self.frame, 0, 5, 2, 1)
+        self.clearSearchBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.clearSearchBtn.setObjectName("clearSearchBtn")
+        self.gridLayout.addWidget(self.clearSearchBtn, 0, 7, 1, 1)
+        self.startBtn = QtWidgets.QPushButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.startBtn.sizePolicy().hasHeightForWidth())
+        self.startBtn.setSizePolicy(sizePolicy)
+        self.startBtn.setObjectName("startBtn")
+        self.gridLayout.addWidget(self.startBtn, 1, 7, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 906, 26))
@@ -192,8 +237,15 @@ class Ui_MainWindow(QMainWindow):
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
-        self.lockIcon = QtGui.QIcon("lock.ico")
 
+        self.lockIcon = QtGui.QIcon("lock.ico")
+        self.findDlg = QtWidgets.QDialog()
+        self.findUi = Ui_findDlg(parent=self)
+        self.findUi.setupUi(self.findDlg)
+        
+    def do_something(self):
+        print('hi')
+        
     def setupUi(self, MainWindow):
         self._windowLayout()
         
@@ -207,7 +259,6 @@ class Ui_MainWindow(QMainWindow):
         self.startBtn.clicked.connect(self.processList)
         self.saveConfigBtn.clicked.connect(self.saveConfig)
         self.mameExeBtn.clicked.connect(self.openMameExeDialog)
-        self.dupBtn.clicked.connect(self.findDuplicates)
         self.cloneBtn.clicked.connect(self.unselectClones)
         self.expColBtn.clicked.connect(self.expColTree)
         self.lockBtn.clicked.connect(self.toggleLock)
@@ -215,10 +266,7 @@ class Ui_MainWindow(QMainWindow):
         self.groupMode = 'parent'
         self.parentBtn.toggled.connect(self.toggleMode)
         self.titleBtn.toggled.connect(self.toggleMode)
-        self.searchBtn.clicked.connect(self.searchList)
         self.clearSearchBtn.clicked.connect(self.clearSearch)
-        self.searchLine.textEdited.connect(self.searchLineClicked);
-        self.setTabOrder(self.searchLine, self.searchBtn)
         self.treeWidget.itemChanged[QTreeWidgetItem, int].connect(self.treeItemChanged)
         self.treeWidget.itemSelectionChanged.connect(self.treeItemSelected)
         
@@ -244,10 +292,16 @@ class Ui_MainWindow(QMainWindow):
         self.saveAct.triggered.connect(self.saveMame)
         self.saveAct.setEnabled(False)
 
+        findAct = QAction(icon, 'Find', self)
+        findAct.setShortcut('Ctrl+F')
+        findAct.setStatusTip('Find')
+        findAct.triggered.connect(self.showFindDlg)
+
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAct)
         fileMenu.addAction(loadAct)
         fileMenu.addAction(self.saveAct)
+        fileMenu.addAction(findAct)
 
         fileMenu.aboutToShow.connect(self.populateFileMenu)
 
@@ -264,7 +318,7 @@ class Ui_MainWindow(QMainWindow):
             self.configData.loadJSON(self.configfile)
             self.amDir.setText(self.configData.amDir)
             self.mameExe.setText(self.configData.mameExe)
-            
+
     def closeEvent(self, event):
         try:
             if self.dataChanged:
@@ -279,6 +333,12 @@ class Ui_MainWindow(QMainWindow):
         except:
             traceback.print_exc()
 
+    def showFindDlg(self):
+        self.findDlg.show()
+        self.findUi.findLineClicked()
+        self.findUi.findBtn.setAutoDefault(True)
+        self.findUi.findLine.setFocus(True)
+        
 ##    def keyPressEvent(self, e):
 ##        if e.key() == Qt.Key_Escape:
 ##            self.close()
@@ -286,23 +346,20 @@ class Ui_MainWindow(QMainWindow):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.dupBtn.setText(_translate("MainWindow", "Find Duplicates"))
-        self.clearSearchBtn.setText(_translate("MainWindow", "Clear Search"))
         self.treeWidget.setSortingEnabled(True)
-        self.searchLabel.setText(_translate("MainWindow", "Search"))
         self.mameExeBtn.setText(_translate("MainWindow", "..."))
         self.amDirLbl.setText(_translate("MainWindow", "AttractMode Directory"))
         self.amDirBtn.setText(_translate("MainWindow", "..."))
-        self.searchBtn.setText(_translate("MainWindow", "Go"))
         self.mameExeLbl.setText(_translate("MainWindow", "Mame Executable"))
         self.expColBtn.setText(_translate("MainWindow", "Expand"))
         self.saveConfigBtn.setText(_translate("MainWindow", "Save Config"))
         self.lockBtn.setText(_translate("MainWindow", "Lock Selected"))
-        self.startBtn.setText(_translate("MainWindow", "Validate"))
         self.cloneBtn.setText(_translate("MainWindow", "Unselect Clones"))
         self.label.setText(_translate("MainWindow", "Group Mode"))
         self.parentBtn.setText(_translate("MainWindow", "Parent"))
         self.titleBtn.setText(_translate("MainWindow", "Title"))
+        self.clearSearchBtn.setText(_translate("MainWindow", "Clear Search"))
+        self.startBtn.setText(_translate("MainWindow", "Validate"))
 
     def populateFileMenu(self):
         try:
@@ -390,6 +447,28 @@ class Ui_MainWindow(QMainWindow):
                 item.setHidden(False)
                 if item.parent():
                     item.parent().setHidden(False)
+            
+    def searchList2(self, searchTerm):
+        if searchTerm != "":
+            self.setTreeHidden(True)
+
+            if self.findUi.cbxExactMatch.isChecked():
+                searchFlags = QtCore.Qt.MatchExactly
+            else:
+                searchFlags = QtCore.Qt.MatchContains
+
+            if self.findUi.cbxChildren.isChecked():
+                searchFlags |= QtCore.Qt.MatchRecursive
+            
+            resultItems = self.treeWidget.findItems(searchTerm, searchFlags, 0)
+            for item in resultItems:
+                item.setHidden(False)
+                if item.parent():
+                    item.parent().setHidden(False)
+                    if self.findUi.cbxInclSiblings.isChecked():
+                        for cIdx in range(item.parent().childCount()):
+                            item.parent().child(cIdx).setHidden(False)
+                        
             
     def getRomPath(self, fileToOpen):
         if os.path.isfile(fileToOpen):
@@ -654,7 +733,7 @@ class Ui_MainWindow(QMainWindow):
         extraCol   = self.headerDict['Extra']
         try:
             d = QtWidgets.QDialog()
-            dui = ProgressDialog()
+            dui = ProgressDialog(parent=self)
             dui.setupUi(d)
             d.show()
             dui.setProgressRange(1, len(self.lineDict)*2)
@@ -757,6 +836,7 @@ class Ui_MainWindow(QMainWindow):
             self.treeWidget.resizeColumnToContents(0)
             self.treeWidget.collapseAll()
             self.expColBtn.setText("Expand")
+
         except:
             traceback.print_exc()
             exit()
@@ -845,6 +925,7 @@ class Ui_MainWindow(QMainWindow):
             for idx in range(titleCount):
                 romCount += root.child(idx).childCount()
             dui.setProgressRange(1, romCount)
+            self.dataChanged = True
             for idx in range(titleCount):
                 if dui.isCancelled() == True:
                     break;

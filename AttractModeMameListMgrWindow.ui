@@ -15,27 +15,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="2" column="6">
-     <widget class="QPushButton" name="dupBtn">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>Find Duplicates</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="7">
-     <widget class="QPushButton" name="clearSearchBtn">
-      <property name="text">
-       <string>Clear Search</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0" colspan="10">
+    <item row="3" column="0" colspan="9">
      <widget class="QTreeWidget" name="treeWidget">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -77,14 +57,7 @@
       </column>
      </widget>
     </item>
-    <item row="2" column="0">
-     <widget class="QLabel" name="searchLabel">
-      <property name="text">
-       <string>Search</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="5">
+    <item row="1" column="3">
      <widget class="QPushButton" name="mameExeBtn">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -103,7 +76,7 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="1" colspan="4">
+    <item row="0" column="1" colspan="2">
      <widget class="QLineEdit" name="amDir">
       <property name="sizePolicy">
        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -119,7 +92,7 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="1" colspan="4">
+    <item row="1" column="1" colspan="2">
      <widget class="QLineEdit" name="mameExe">
       <property name="sizePolicy">
        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -148,7 +121,7 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="5">
+    <item row="0" column="3">
      <widget class="QPushButton" name="amDirBtn">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -167,25 +140,6 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="5">
-     <widget class="QPushButton" name="searchBtn">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>25</width>
-        <height>16777215</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Go</string>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="0">
      <widget class="QLabel" name="mameExeLbl">
       <property name="text">
@@ -193,30 +147,14 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="1" colspan="4">
-     <widget class="QLineEdit" name="searchLine">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>300</width>
-        <height>0</height>
-       </size>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="6">
+    <item row="1" column="4">
      <widget class="QPushButton" name="expColBtn">
       <property name="text">
        <string>Expand</string>
       </property>
      </widget>
     </item>
-    <item row="0" column="6">
+    <item row="0" column="4">
      <widget class="QPushButton" name="saveConfigBtn">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -229,7 +167,7 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="9">
+    <item row="0" column="8">
      <spacer name="horizontalSpacer_4">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
@@ -242,7 +180,7 @@
       </property>
      </spacer>
     </item>
-    <item row="1" column="8">
+    <item row="1" column="6">
      <widget class="QPushButton" name="lockBtn">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -255,20 +193,7 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="8">
-     <widget class="QPushButton" name="startBtn">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>Validate</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="8">
+    <item row="0" column="6">
      <widget class="QPushButton" name="cloneBtn">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -281,7 +206,7 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="7" rowspan="2">
+    <item row="0" column="5" rowspan="2">
      <widget class="QFrame" name="frame">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -346,6 +271,26 @@
         <string>Title</string>
        </property>
       </widget>
+     </widget>
+    </item>
+    <item row="0" column="7">
+     <widget class="QPushButton" name="clearSearchBtn">
+      <property name="text">
+       <string>Clear Search</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="7">
+     <widget class="QPushButton" name="startBtn">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Validate</string>
+      </property>
      </widget>
     </item>
    </layout>
