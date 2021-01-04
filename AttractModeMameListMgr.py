@@ -318,6 +318,44 @@ class Ui_MainWindow(QMainWindow):
             self.configData.loadJSON(self.configfile)
             self.amDir.setText(self.configData.amDir)
             self.mameExe.setText(self.configData.mameExe)
+            self.loadAmConfig()
+            dispMenu = menubar.addMenu('Display')
+            for d in self.dispDict.keys():
+                dispAct = QAction(icon, d, self)
+                dispMenu.addAction(dispAct)
+
+    def loadDisplayCfg(self, cfgList, listIdx):
+        cfgDict = dict()
+        cfgDict['filter'] = dict()
+        for i in range(listIdx+1, len(cfgList)):
+            line = cfgList[i]
+            lvl, cfgKey, cfgVal = self.getCfgLineKeyVal(line)
+            if lvl == 1:
+                if cfgKey == 'filter':
+                    filterName = cfgVal
+                    cfgDict['filter'][filterName] = list()
+                else:
+                    cfgDict[cfgKey] = cfgVal
+            elif lvl == 2 and cfgKey == 'rule':
+                cfgDict['filter'][filterName].append(cfgVal)
+            elif lvl == 0:
+                return cfgDict, i
+                
+        return cfgDict, len(cfgList)
+
+    def loadAmConfig(self):
+        self.dispDict = dict()
+        cfgList = list()
+        fileToOpen = 'e:\\AttractMode\\attract.cfg'
+        with open(fileToOpen, "r") as amConfig:
+            line = amConfig.readline()
+            while line:
+                cfgList.append(line)
+                line = amConfig.readline()
+        for i, line in enumerate(cfgList):
+            lvl, dispKey, dispVal = self.getCfgLineKeyVal(line)
+            if lvl == 0 and dispKey == 'display':
+                self.dispDict[dispVal], i = self.loadDisplayCfg(cfgList, i)
 
     def closeEvent(self, event):
         try:
@@ -468,17 +506,30 @@ class Ui_MainWindow(QMainWindow):
                     if self.findUi.cbxInclSiblings.isChecked():
                         for cIdx in range(item.parent().childCount()):
                             item.parent().child(cIdx).setHidden(False)
+
+    def getConfigLevel(self, line):
+        i = 0
+        while line[i] == '\t':
+            i += 1
+        return i
                         
-            
+    def getCfgLineKeyVal(self, line):
+        level = self.getConfigLevel(line)
+        keyVal = ' '.join(line.strip().split()).split(' ')
+        if len(keyVal) >= 2:
+            return level, keyVal[0], ' '.join(keyVal[1:])
+        else:
+            return 0, None, None
+        
     def getRomPath(self, fileToOpen):
         if os.path.isfile(fileToOpen):
             romPath = ""
             with open(fileToOpen, "r") as fp:
                 line = fp.readline()
                 while line:
-                    keyVal = ' '.join(line.split()).split(' ')
-                    if keyVal[0] == 'rompath':
-                        romPath = keyVal[1]
+                    key, val = getCfgLineKeyVal(line)
+                    if key == 'rompath':
+                        romPath = val
                         break
                     line = fp.readline()
             return romPath
