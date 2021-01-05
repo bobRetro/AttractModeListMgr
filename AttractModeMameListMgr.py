@@ -1,6 +1,7 @@
 import traceback
 import subprocess
 import os.path
+import sys
 
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from PyQt5.Qt import *
@@ -208,6 +209,37 @@ def getTitleVariation(title):
         traceback.print_exc()
         raise e
     return newTitle, var
+
+
+def addDelimitedItem(line, value, delimiter):
+    newLine = line
+    if newLine != "":
+        newLine += delimiter
+    newLine += value
+    return newLine
+
+
+def removeFieldVal(field, val):
+    if val == '':
+        return field
+    newField = ""
+    valList = field.split(',')
+    for j in valList:
+        if j != val:
+            newField = addDelimitedItem(newField, j, ",")
+    return newField
+
+
+def addFieldVal(field, val):
+    if val == '':
+        return field
+    newField = field
+    valList = field.split(',')
+    for j in valList:
+        if j == val:
+            return newField
+    newField = addDelimitedItem(newField, val, ",")
+    return newField
 
 
 class Ui_MainWindow(QMainWindow):
@@ -449,30 +481,41 @@ class Ui_MainWindow(QMainWindow):
                 dispAct = QAction(icon, d, self)
                 dispAct.triggered.connect(self.loadDisp)
                 dispMenu.addAction(dispAct)
+#            self.getMameVersion()
+
+    def ignoreUnsavedChangesWarning(self):
+        if self.dataChanged:
+            reply = QMessageBox.question(self,
+                                         "Unsaved Changes",
+                                         "There are unsaved changes. Are you sure you want to exit?",
+                                         QMessageBox.Yes,
+                                         QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                return True
+            else:
+                return False
+        else:
+            return True
 
     def loadDisp(self):
         try:
-            action = self.sender()
-            print(self.dispDict[action.text()]['romlist']+".txt")
-            self.listName = action.text()
-            self.loadList()
-        except:
+            if self.ignoreUnsavedChangesWarning():
+                action = self.sender()
+                self.listName = action.text()
+                self.loadList()
+        except Exception as e:
             traceback.print_exc()
+            raise e
+
     def closeProgram(self):
         self.close()
 
     def closeEvent(self, event):
         try:
-            if self.dataChanged:
-                reply = QMessageBox.question(self,
-                                             "Unsaved Changes",
-                                             "There are unsaved changes. Are you sure you want to exit?",
-                                             QMessageBox.Yes,
-                                             QMessageBox.No)
-                if reply == QMessageBox.Yes:
-                    event.accept()
-                else:
-                    event.ignore()            
+            if self.ignoreUnsavedChangesWarning():
+                event.accept()
+            else:
+                event.ignore()
         except Exception as e:
             traceback.print_exc()
             raise e
@@ -661,14 +704,6 @@ class Ui_MainWindow(QMainWindow):
             print("Oops!", sys.exc_info()[0], "occurred.")
             raise e
 
-    @staticmethod
-    def addDelimitedItem(line, value, delimiter):
-        newLine = line
-        if newLine != "":
-            newLine += delimiter
-        newLine += value
-        return newLine
-
     def setLineStatus(self, line, status):
         if status == '':
             newLine = line
@@ -681,22 +716,12 @@ class Ui_MainWindow(QMainWindow):
                     newStatus = ""
                     for s in statusList:
                         if s != 'pass' and s != 'fail':
-                            newStatus = self.addDelimitedItem(newStatus, s, ",")
-                    newStatus = self.addDelimitedItem(newStatus, status, ",")
-                    newLine = self.addDelimitedItem(newLine, newStatus, ";")
+                            newStatus = addDelimitedItem(newStatus, s, ",")
+                    newStatus = addDelimitedItem(newStatus, status, ",")
+                    newLine = addDelimitedItem(newLine, newStatus, ";")
                 else:
-                    newLine = self.addDelimitedItem(newLine, colList[i], ";")
+                    newLine = addDelimitedItem(newLine, colList[i], ";")
         return newLine
-
-    def removeFieldVal(self, field, val):
-        if val == '':
-            return field
-        newField = ""
-        valList = field.split(',')
-        for j in valList:
-            if j != val:
-                newField = self.addDelimitedItem(newField, j, ",")
-        return newField
 
     def getField(self, line, field):
         if field in self.headerDict.keys():
@@ -704,26 +729,15 @@ class Ui_MainWindow(QMainWindow):
         else:
             return None
 
-    def addFieldVal(self, field, val):
-        if val == '':
-            return field
-        newField = field
-        valList = field.split(',')
-        for j in valList:
-            if j == val:
-                return newField
-        newField = self.addDelimitedItem(newField, val, ",")
-        return newField
-
     def setFieldVal(self, line, field, addVal, remVal):
         newLine = ""
         colList = line.split(';')
         for i, h in enumerate(self.headerDict):
             newField = colList[i]
             if h == field:
-                newField = self.removeFieldVal(newField, remVal)
-                newField = self.addFieldVal(newField, addVal)
-            newLine = self.addDelimitedItem(newLine, newField, ';')
+                newField = removeFieldVal(newField, remVal)
+                newField = addFieldVal(newField, addVal)
+            newLine = addDelimitedItem(newLine, newField, ';')
         return newLine
 
     def updateLineDict(self):
@@ -874,6 +888,7 @@ class Ui_MainWindow(QMainWindow):
 
         try:
             if cnt > 1:
+                self.dataChanged = False
                 self.treeWidget.clear()
                 self.lineDict.clear()
                 self.gameDict.clear()
@@ -919,6 +934,13 @@ class Ui_MainWindow(QMainWindow):
         except Exception as e:
             traceback.print_exc()
             raise e
+
+    def getMameVersion(self):
+        print(self.mameExe.text())
+        ret = subprocess.run(
+            [self.mameExe.text(), "pacman", "-verifyroms", "-rompath", self.romPath],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+        print(ret)
 
     def processRom(self, romname):
         ret = subprocess.run(

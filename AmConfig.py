@@ -5,6 +5,9 @@ class AmConfig:
         self.amDir = 'AttractMode'
         self.outFilePath = 'MameValidated.txt'
         self.mameExe = 'mame64.exe'
+        self.display = list()
+        self.display.append("Mame")
+        self.display.append("Atari")
         
     def saveJSON(self, cfgFileName):
         with open(cfgFileName, "w") as data_file:
@@ -19,4 +22,7 @@ class AmConfig:
             self.amDir = jsonData["amDir"]
             self.outFilePath = jsonData["outFilePath"]
             self.mameExe = jsonData["mameExe"]
+            self.display = jsonData["display"]
+            print(self.display)
+            print(self.display[1])
                     
