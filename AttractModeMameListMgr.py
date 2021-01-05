@@ -224,6 +224,7 @@ class Ui_MainWindow(QMainWindow):
     romPath = ""
     firstLoad = True
     treeLoading = False
+    listName = "Mame"
 
     def _windowLayout(self):
         MainWindow.setObjectName("MainWindow")
@@ -446,8 +447,17 @@ class Ui_MainWindow(QMainWindow):
             dispMenu = menubar.addMenu('Display')
             for d in self.dispDict.keys():
                 dispAct = QAction(icon, d, self)
+                dispAct.triggered.connect(self.loadDisp)
                 dispMenu.addAction(dispAct)
 
+    def loadDisp(self):
+        try:
+            action = self.sender()
+            print(self.dispDict[action.text()]['romlist']+".txt")
+            self.listName = action.text()
+            self.loadList()
+        except:
+            traceback.print_exc()
     def closeProgram(self):
         self.close()
 
@@ -804,7 +814,7 @@ class Ui_MainWindow(QMainWindow):
         extraCol = self.headerDict['Extra']
 
         d = QtWidgets.QDialog()
-        dui = ProgressDialog(parent=self)
+        dui = ProgressDialog(parent=self, flags=Qt.Dialog)
         dui.setupUi(d)
         d.show()
         dui.setProgressRange(1, len(self.lineDict)*2)
@@ -869,9 +879,9 @@ class Ui_MainWindow(QMainWindow):
                 self.gameDict.clear()
                 self.headerDict.clear()
                 if self.firstLoad:
-                    bkpFile = os.path.join(self.amDir.text(), "romlists\\Mame.txt.bkp")
+                    bkpFile = os.path.join(self.amDir.text(), "romlists\\"+self.listName+".txt.bkp")
 
-                fileToOpen = os.path.join(self.amDir.text(), "romlists\\Mame.txt")
+                fileToOpen = os.path.join(self.amDir.text(), "romlists\\"+self.listName+".txt")
                 self.treeWidget.setSortingEnabled(False)
                 with open(fileToOpen) as fp:
                     line = fp.readline()
@@ -955,7 +965,7 @@ class Ui_MainWindow(QMainWindow):
             d = QtWidgets.QDialog()
             self.treeWidget.expandAll()
             self.expColBtn.setText("Collapse")
-            dui = ProgressDialog()
+            dui = ProgressDialog(parent=self, flags=Qt.Dialog)
             dui.setupUi(d)
             d.show()
             romCount = 0
