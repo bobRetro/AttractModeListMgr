@@ -19,7 +19,8 @@ class AmConfig:
     def loadJSON(self, cfgFileName):
         with open(cfgFileName, "r") as data_file:
             jsonData = json.load(data_file)
-            self.amDir = jsonData["amDir"]
+            if "amDir" in jsonData:
+                self.amDir = jsonData["amDir"]
             self.outFilePath = jsonData["outFilePath"]
             self.mameExe = jsonData["mameExe"]
             self.display = jsonData["display"]

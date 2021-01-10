@@ -5,84 +5,9 @@ import os.path
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from PyQt5.Qt import *
 from ProgressDialog import ProgressDialog
-from configDialog import Ui_configDialog
+from ConfigDialog import Ui_configDialog
 from AmConfig import AmConfig
-
-class Ui_findDlg(object):
-    def __init__(self, parent=None):
-        self.parent = parent
-
-    def setupUi(self, findDlg):
-
-        findDlg.setObjectName("findDlg")
-        findDlg.resize(400, 135)
-        findDlg.setModal(True)
-        self.buttonBox = QtWidgets.QDialogButtonBox(findDlg)
-        self.buttonBox.setGeometry(QtCore.QRect(310, 100, 71, 30))
-        self.buttonBox.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.buttonBox.setOrientation(QtCore.Qt.Vertical)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel)
-        self.buttonBox.setObjectName("buttonBox")
-        self.findLine = QtWidgets.QLineEdit(findDlg)
-        self.findLine.setGeometry(QtCore.QRect(50, 10, 241, 20))
-        self.findLine.setObjectName("findLine")
-        self.findLbl = QtWidgets.QLabel(findDlg)
-        self.findLbl.setGeometry(QtCore.QRect(10, 10, 47, 13))
-        self.findLbl.setObjectName("findLbl")
-        self.findBtn = QtWidgets.QPushButton(findDlg)
-        self.findBtn.setGeometry(QtCore.QRect(310, 10, 71, 30))
-        self.findBtn.setObjectName("findBtn")
-        self.cbxGroups = QtWidgets.QCheckBox(findDlg)
-        self.cbxGroups.setGeometry(QtCore.QRect(50, 80, 74, 17))
-        self.cbxGroups.setObjectName("cbxGroups")
-        self.cbxChildren = QtWidgets.QCheckBox(findDlg)
-        self.cbxChildren.setGeometry(QtCore.QRect(50, 100, 74, 17))
-        self.cbxChildren.setObjectName("cbxChildren")
-        self.cbxInclSiblings = QtWidgets.QCheckBox(findDlg)
-        self.cbxInclSiblings.setGeometry(QtCore.QRect(150, 40, 141, 17))
-        self.cbxInclSiblings.setObjectName("cbxInclSiblings")
-        self.cbxExactMatch = QtWidgets.QCheckBox(findDlg)
-        self.cbxExactMatch.setGeometry(QtCore.QRect(50, 40, 91, 17))
-        self.cbxExactMatch.setObjectName("cbxExactMatch")
-        self.duplicatesBtn = QtWidgets.QPushButton(findDlg)
-        self.duplicatesBtn.setGeometry(QtCore.QRect(310, 50, 71, 28))
-        self.duplicatesBtn.setObjectName("DuplicatesBtn")
-
-        self.cbxChildren.setChecked(True)
-        self.cbxGroups.setChecked(True)
-        
-        self.retranslateUi(findDlg)
-        self.buttonBox.accepted.connect(findDlg.accept)
-        self.buttonBox.rejected.connect(findDlg.reject)
-        self.findBtn.clicked.connect(self.doSearch)
-        self.findLine.textEdited.connect(self.findLineClicked)
-        self.duplicatesBtn.clicked.connect(self.findDuplicates)
-        QtCore.QMetaObject.connectSlotsByName(findDlg)
-
-    def retranslateUi(self, findDlg):
-        _translate = QtCore.QCoreApplication.translate
-        findDlg.setWindowTitle(_translate("findDlg", "Find"))
-        self.findLbl.setText(_translate("findDlg", "Find"))
-        self.findBtn.setText(_translate("findDlg", "Search"))
-        self.cbxGroups.setText(_translate("findDlg", "Groups"))
-        self.cbxChildren.setText(_translate("findDlg", "Children"))
-        self.cbxInclSiblings.setText(_translate("findDlg", "Include siblings in results"))
-        self.cbxExactMatch.setText(_translate("findDlg", "Exact Match"))
-        self.duplicatesBtn.setText(_translate("findDlg", "Duplicates"))
-        
-    def findLineClicked(self):
-        self.findBtn.setDefault(True)
-        self.findBtn.setAutoDefault(True)
-
-    def doSearch(self):
-        try:
-            self.parent.searchList(self.findLine.text())
-        except Exception as e:
-            traceback.print_exc()
-            raise e
-
-    def findDuplicates(self):
-        self.parent.findDuplicates()
+from FindDialog import Ui_findDlg
 
 
 def getConfigLevel(line):
@@ -165,21 +90,21 @@ def loadDisplayCfg(cfgList, listIdx):
     return cfgDict, len(cfgList)
 
 
-def loadAmConfig():
+def loadAmConfig(fileToOpen):
     dispDict = dict()
-    cfgList = list()
-    fileToOpen = 'e:\\AttractMode\\attract.cfg'
-    with open(fileToOpen, "r") as amConfig:
-        line = amConfig.readline()
-        while line:
-            cfgList.append(line)
+    if os.path.exists(fileToOpen):
+        cfgList = list()
+    #    fileToOpen = 'e:\\AttractMode\\attract.cfg'
+        with open(fileToOpen, "r") as amConfig:
             line = amConfig.readline()
-    for i, line in enumerate(cfgList):
-        lvl, dispKey, dispVal = getCfgLineKeyVal(line)
-        if lvl == 0 and dispKey == 'display':
-            dispDict[dispVal], i = loadDisplayCfg(cfgList, i)
+            while line:
+                cfgList.append(line)
+                line = amConfig.readline()
+        for i, line in enumerate(cfgList):
+            lvl, dispKey, dispVal = getCfgLineKeyVal(line)
+            if lvl == 0 and dispKey == 'display':
+                dispDict[dispVal], i = loadDisplayCfg(cfgList, i)
     return dispDict
-
 
 def getTitleVariation(title):
     try:
@@ -248,6 +173,8 @@ class Ui_MainWindow(QMainWindow):
     gameDict = dict()
     titleDict = dict()
     dispDict = dict()
+    dispGameDict = dict()
+    emuDict = dict()
     configData = AmConfig()
     configfile = 'AttractModeMameListMgr.cfg'
     groupMode = 'parent'
@@ -369,6 +296,7 @@ class Ui_MainWindow(QMainWindow):
         self.treeWidget.headerItem().setText(2, "Rom")
         self.treeWidget.headerItem().setText(3, "CloneOf")
         self.treeWidget.headerItem().setText(4, "Status")
+        self.treeWidget.headerItem().setText(5, "Emulator")
         
         self.startBtn.clicked.connect(self.processList)
         self.cloneBtn.clicked.connect(self.unselectClones)
@@ -394,7 +322,7 @@ class Ui_MainWindow(QMainWindow):
         loadAct = QAction(icon, 'Load', self)
         loadAct.setShortcut('Ctrl+L')
         loadAct.setStatusTip('Load File')
-        loadAct.triggered.connect(self.loadList)
+        loadAct.triggered.connect(lambda: self.loadList('Mame'))
 
         icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogSaveButton')))
         
@@ -432,17 +360,34 @@ class Ui_MainWindow(QMainWindow):
                                   QtCore.Qt.WindowMaximizeButtonHint)
 
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        self.loadAmConfigFile()
+
+    def addMenu(self, menuName, subMenuDict, connectAction):
+        dispMenu = None
+        for d in self.menuBar().children():
+            if isinstance(d, QMenu) and d.title() == menuName:
+                dispMenu = d
+                break
+        if not isinstance(dispMenu, QMenu):
+            dispMenu = self.menuBar().addMenu(menuName)
+        else:
+            print("Found Display")
+        for a in dispMenu.actions():
+            dispMenu.removeAction(a)
+            print('Remove {}'.format(a.text()))
+        for d in subMenuDict.keys():
+            dispAct = QAction(d, self)
+            dispAct.triggered.connect(connectAction)
+            dispMenu.addAction(dispAct)
+
+    def loadAmConfigFile(self):
         if os.path.exists(self.configfile):
             self.configData.loadJSON(self.configfile)
             self.configUi.amDir.setText(self.configData.amDir)
             self.configUi.mameExe.setText(self.configData.mameExe)
-            self.dispDict = loadAmConfig()
-            dispMenu = menubar.addMenu('Display')
-            for d in self.dispDict.keys():
-                dispAct = QAction(icon, d, self)
-                dispAct.triggered.connect(self.loadDisp)
-                dispMenu.addAction(dispAct)
-            self.getMameVersion()
+            self.dispDict = loadAmConfig(os.path.join(self.configData.amDir, "attract.cfg"))
+
+            self.addMenu('Display', self.dispDict, self.loadDisp)
 
     def showPreferences(self):
         try:
@@ -452,11 +397,17 @@ class Ui_MainWindow(QMainWindow):
             self.configDialog.show()
             rsp = self.configDialog.exec_()
             if rsp == QDialog.Accepted:
+                if self.configData.amDir != self.configUi.amDir.text():
+                    loadConfig = True
+                else:
+                    loadConfig = False
                 if (self.configData.amDir != self.configUi.amDir.text() or
                         self.configData.mameExe != self.configUi.mameExe.text()):
                     self.configData.amDir = self.configUi.amDir.text()
                     self.configData.mameExe = self.configUi.mameExe.text()
                     self.configData.saveJSON(self.configfile)
+                if loadConfig:
+                    self.loadAmConfigFile()
             else:
                 self.configUi.amDir.setText(currAmDir)
                 self.configUi.mameExe.setText(currMameExe)
@@ -481,9 +432,10 @@ class Ui_MainWindow(QMainWindow):
     def loadDisp(self):
         try:
             if self.ignoreUnsavedChangesWarning():
+                self.dataChanged = False
+                self.saveAct.setEnabled(False)
                 action = self.sender()
-                self.listName = action.text()
-                self.loadList()
+                self.loadList(action.text())
         except Exception as e:
             traceback.print_exc()
             raise e
@@ -739,12 +691,13 @@ class Ui_MainWindow(QMainWindow):
                     for line in sorted(self.lineDict.values(), key=lambda kv: kv.split(';')[self.headerDict['Title']]):
                         of.write(line+'\n')
                 self.dataChanged = False
+                self.saveAct.setEnabled(False)
             
         except Exception as e:
             traceback.print_exc()
             raise e
 
-    def addParent(self, treeItem, newTitle, romname):
+    def addParent(self, treeItem, newTitle, romname, emu):
         gameIdx = self.treeWidget.topLevelItemCount()
         self.gameDict[romname] = gameIdx
         if newTitle not in self.titleDict:
@@ -753,6 +706,7 @@ class Ui_MainWindow(QMainWindow):
         treeItem = self.treeWidget.topLevelItem(gameIdx)
         treeItem.setFlags(int(treeItem.flags()) | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable | Qt.ItemIsTristate)
         treeItem.setText(0, newTitle)
+        treeItem.setText(5, emu)
         return treeItem
 
     def addChild(self, treeItem, newTitle, variation, romname, cloneOf, status, extra):
@@ -797,6 +751,7 @@ class Ui_MainWindow(QMainWindow):
         cloneofCol = self.headerDict['CloneOf']
         statusCol = self.headerDict['Status']
         extraCol = self.headerDict['Extra']
+        emuCol = self.headerDict['Emulator']
 
         d = QtWidgets.QDialog()
         dui = ProgressDialog(parent=self, flags=Qt.Dialog)
@@ -818,11 +773,12 @@ class Ui_MainWindow(QMainWindow):
                     status = getStatus(wordlist[statusCol])
                     extra = wordlist[extraCol]
                     newTitle, variation = getTitleVariation(title)
+                    emu = wordlist[emuCol]
 
                     if mode == 'parent':
                         if level == 'parent':
                             if cloneOf == "":
-                                treeItem = self.addParent(self.treeWidget, newTitle, romname)
+                                treeItem = self.addParent(self.treeWidget, newTitle, romname, emu)
                                 self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
                         else:
                             if cloneOf != "":
@@ -831,12 +787,12 @@ class Ui_MainWindow(QMainWindow):
                                     treeItem = self.treeWidget.topLevelItem(gameIdx)
                                 else:
                                     # Parent ROM not found, create dummy parent using cloneOf value
-                                    treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf)
+                                    treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf, emu)
                                 self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
                     elif mode == 'title':
                         if level == 'parent':
                             if newTitle not in self.titleDict:
-                                self.addParent(self.treeWidget, newTitle, romname)
+                                self.addParent(self.treeWidget, newTitle, romname, emu)
                         else:
                             gameIdx = self.titleDict[newTitle]
                             treeItem = self.treeWidget.topLevelItem(gameIdx)
@@ -853,8 +809,10 @@ class Ui_MainWindow(QMainWindow):
         self.statusBar().showMessage(
             str(self.treeWidget.topLevelItemCount()) + " Groups containing " + str(len(self.lineDict)) + " games")
         
-    def loadList(self):
+    def loadList(self, listName):
         bkpFile = ''
+        if listName is None:
+            listName='Mame'
         cnt = self.getLineCount()-1
 
         try:
@@ -865,9 +823,9 @@ class Ui_MainWindow(QMainWindow):
                 self.gameDict.clear()
                 self.headerDict.clear()
                 if self.firstLoad:
-                    bkpFile = os.path.join(self.configData.amDir, "romlists\\"+self.listName+".txt.bkp")
+                    bkpFile = os.path.join(self.configData.amDir, "romlists\\"+listName+".txt.bkp")
 
-                fileToOpen = os.path.join(self.configData.amDir, "romlists\\"+self.listName+".txt")
+                fileToOpen = os.path.join(self.configData.amDir, "romlists\\"+listName+".txt")
                 self.treeWidget.setSortingEnabled(False)
                 with open(fileToOpen) as fp:
                     line = fp.readline()
@@ -879,12 +837,19 @@ class Ui_MainWindow(QMainWindow):
                     else:
                         return
 
+                    self.emuDict.clear()
                     line = fp.readline()
                     while line:
                         wordlist = line.strip('\n\r').split(';')
                         romname = wordlist[self.headerDict['Name']]
+                        emuname = wordlist[self.headerDict['Emulator']]
                         self.lineDict[romname] = line.strip('\n')
+                        if emuname not in self.emuDict.keys():
+                            self.emuDict[emuname] = 'None'
                         line = fp.readline()
+                    self.addMenu('Emulator', self.emuDict, self.loadDisp)
+
+                    print(self.emuDict)
                 if self.firstLoad:
                     with open(bkpFile, "w") as of:
                         of.write(self.fileHeader)
