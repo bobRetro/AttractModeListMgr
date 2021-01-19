@@ -173,8 +173,9 @@ class Ui_MainWindow(QMainWindow):
     gameDict = dict()
     titleDict = dict()
     dispDict = dict()
-    dispGameDict = dict()
+    romlistDict = dict()
     emuDict = dict()
+    favList = list()
     configData = AmConfig()
     configfile = 'AttractModeMameListMgr.cfg'
     groupMode = 'parent'
@@ -221,14 +222,9 @@ class Ui_MainWindow(QMainWindow):
         self.titleBtn.setGeometry(QtCore.QRect(180, 6, 44, 17))
         self.titleBtn.setObjectName("titleBtn")
         self.gridLayout.addWidget(self.frame, 0, 1, 2, 2)
-        self.lockBtn = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lockBtn.sizePolicy().hasHeightForWidth())
-        self.lockBtn.setSizePolicy(sizePolicy)
-        self.lockBtn.setObjectName("lockBtn")
-        self.gridLayout.addWidget(self.lockBtn, 1, 5, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout.addItem(spacerItem, 1, 8, 1, 1)
         self.startBtn = QtWidgets.QPushButton(self.centralwidget)
@@ -246,13 +242,16 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy.setHeightForWidth(self.treeWidget.sizePolicy().hasHeightForWidth())
         self.treeWidget.setSizePolicy(sizePolicy)
         self.treeWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.treeWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.treeWidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.treeWidget.setColumnCount(4)
         self.treeWidget.setObjectName("treeWidget")
         self.treeWidget.headerItem().setText(0, "1")
         self.treeWidget.headerItem().setText(1, "2")
         self.treeWidget.headerItem().setText(2, "3")
         self.treeWidget.headerItem().setText(3, "4")
+        self.treeWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.treeWidget.customContextMenuRequested.connect(self.menuContextTree)
+
         self.gridLayout.addWidget(self.treeWidget, 3, 0, 1, 10)
         self.clearSearchBtn = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
@@ -270,6 +269,15 @@ class Ui_MainWindow(QMainWindow):
         self.expColBtn.setSizePolicy(sizePolicy)
         self.expColBtn.setObjectName("expColBtn")
         self.gridLayout.addWidget(self.expColBtn, 1, 3, 1, 1)
+        self.failedBtn = QtWidgets.QPushButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.failedBtn.sizePolicy().hasHeightForWidth())
+        self.failedBtn.setSizePolicy(sizePolicy)
+        self.failedBtn.setObjectName("failedBtn")
+        self.gridLayout.addWidget(self.failedBtn, 1, 7, 1, 1)
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 906, 26))
@@ -297,18 +305,20 @@ class Ui_MainWindow(QMainWindow):
         self.treeWidget.headerItem().setText(3, "CloneOf")
         self.treeWidget.headerItem().setText(4, "Status")
         self.treeWidget.headerItem().setText(5, "Emulator")
+        self.treeWidget.headerItem().setText(6, "Favorite")
         
         self.startBtn.clicked.connect(self.processList)
         self.cloneBtn.clicked.connect(self.unselectClones)
         self.expColBtn.clicked.connect(self.expColTree)
-        self.lockBtn.clicked.connect(self.toggleLock)
         self.parentBtn.setChecked(True)
         self.groupMode = 'parent'
         self.parentBtn.toggled.connect(self.toggleMode)
         self.titleBtn.toggled.connect(self.toggleMode)
         self.clearSearchBtn.clicked.connect(self.clearSearch)
+        self.failedBtn.clicked.connect(self.toggleFailed)
+
         self.treeWidget.itemChanged[QTreeWidgetItem, int].connect(self.treeItemChanged)
-        self.treeWidget.itemSelectionChanged.connect(self.treeItemSelected)
+#        self.treeWidget.itemSelectionChanged.connect(self.treeItemSelected)
         
         menubar = self.menuBar()
         style = self.style()
@@ -362,6 +372,31 @@ class Ui_MainWindow(QMainWindow):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         self.loadAmConfigFile()
 
+    def menuContextTree(self, point):
+        try:
+            index = self.treeWidget.indexAt(point)
+
+            if not index.isValid():
+                return
+
+            item = self.treeWidget.itemAt(point)
+            name = item.text(0)  # The text of the node.
+
+            # We build the menu.
+            menu = QtWidgets.QMenu()
+            self.setLockContextMenu(menu)
+            action = menu.addAction(name)
+            menu.addSeparator()
+            action_1 = menu.addAction("Choix 1")
+            action_2 = menu.addAction("Choix 2")
+            action_3 = menu.addAction("Choix 3")
+
+
+            menu.exec_(self.treeWidget.mapToGlobal(point))
+        except Exception as e:
+            traceback.print_exc()
+            raise e
+
     def addMenu(self, menuName, subMenuDict, connectAction):
         dispMenu = None
         for d in self.menuBar().children():
@@ -378,6 +413,8 @@ class Ui_MainWindow(QMainWindow):
         for d in subMenuDict.keys():
             dispAct = QAction(d, self)
             dispAct.triggered.connect(connectAction)
+            print("Rom List for {} is {}".format(d, self.dispDict[d]['romlist']))
+
             dispMenu.addAction(dispAct)
 
     def loadAmConfigFile(self):
@@ -470,11 +507,11 @@ class Ui_MainWindow(QMainWindow):
         self.label.setText(_translate("MainWindow", "Group Mode"))
         self.parentBtn.setText(_translate("MainWindow", "Parent"))
         self.titleBtn.setText(_translate("MainWindow", "Title"))
-        self.lockBtn.setText(_translate("MainWindow", "Lock Selected"))
         self.startBtn.setText(_translate("MainWindow", "Validate"))
         self.treeWidget.setSortingEnabled(True)
         self.clearSearchBtn.setText(_translate("MainWindow", "Clear Search"))
         self.expColBtn.setText(_translate("MainWindow", "Expand"))
+        self.failedBtn.setText(_translate("MainWindow", "Hide Failed"))
 
     def populateFileMenu(self):
         try:
@@ -484,22 +521,22 @@ class Ui_MainWindow(QMainWindow):
             traceback.print_exc()
             raise e
 
-    def treeItemSelected(self):
-        try:
-            for i in self.treeWidget.selectedItems():
-                if i.parent():
-                    self.lockBtn.setEnabled(True)
-                    line = self.lineDict[i.text(2)]
-                    extra = self.getField(line, 'Extra')
-                    if 'locked' in extra.split(','):
-                        self.lockBtn.setText('Unlock Selected')
-                    else:
-                        self.lockBtn.setText('Lock Selected')
-                else:
-                    self.lockBtn.setEnabled(False)
-        except Exception as e:
-            traceback.print_exc()
-            raise e
+    # def treeItemSelected(self):
+    #     try:
+    #         for i in self.treeWidget.selectedItems():
+    #             if i.parent():
+    #                 self.lockBtn.setEnabled(True)
+    #                 line = self.lineDict[i.text(2)]
+    #                 extra = self.getField(line, 'Extra')
+    #                 if 'locked' in extra.split(','):
+    #                     self.lockBtn.setText('Unlock Selected')
+    #                 else:
+    #                     self.lockBtn.setText('Lock Selected')
+    #             else:
+    #                 self.lockBtn.setEnabled(False)
+    #     except Exception as e:
+    #         traceback.print_exc()
+    #         raise e
 
     def treeItemChanged(self, item, column):
         if not self.treeLoading:
@@ -520,27 +557,65 @@ class Ui_MainWindow(QMainWindow):
     def searchLineClicked(self):
         self.searchBtn.setDefault(True)
         self.searchBtn.setAutoDefault(True)
-        
-    def toggleLock(self):
-        try:
-            getSelected = self.treeWidget.selectedItems()
-            if getSelected:
-                baseNode = getSelected[0]
-                if baseNode.parent():
-                    newLine = self.lineDict[baseNode.text(2)]
-                    extra = self.getField(newLine, 'Extra')
-                    if 'locked' in extra.split(','):
-                        icon = QtGui.QIcon()
-                        baseNode.setIcon(0, icon)
-                        self.lineDict[baseNode.text(2)] = self.setFieldVal(newLine, 'Extra', '', 'locked')
-                        self.lockBtn.setText('Lock Selected')
-                    else:
-                        baseNode.setIcon(0, self.lockIcon)
-                        self.lineDict[baseNode.text(2)] = self.setFieldVal(newLine, 'Extra', 'locked', '')
-                        self.lockBtn.setText('Unock Selected')
-        except Exception as e:
-            traceback.print_exc()
-            raise e
+
+    def setLockContextMenu(self, menu):
+        item_count = 0
+        locked_count = 0
+
+        selected_items = self.treeWidget.selectedItems()
+        for tree_item in selected_items:
+            if tree_item.parent():
+                item_count += 1
+                newLine = self.lineDict[tree_item.text(2)]
+                extra = self.getField(newLine, 'Extra')
+                if 'locked' in extra.split(','):
+                    locked_count += 1
+        print('Item={} Locked={}'.format(item_count, locked_count))
+        if item_count > 0:
+            if locked_count > 0:
+                if locked_count == item_count:
+                    action = menu.addAction("Unlock")
+                    action.triggered.connect(self.unlockSelected)
+                else:
+                    action = menu.addAction("Toggle Lock")
+                    action.triggered.connect(self.toggleLockSelected)
+            else:
+                action = menu.addAction("Lock")
+                action.triggered.connect(self.lockSelected)
+
+    def lockItem(self, tree_item):
+        if tree_item.parent():
+            newLine = self.lineDict[tree_item.text(2)]
+            tree_item.setIcon(0, self.lockIcon)
+            self.lineDict[tree_item.text(2)] = self.setFieldVal(newLine, 'Extra', 'locked', '')
+
+    def unlockItem(self, tree_item):
+        if tree_item.parent():
+            newLine = self.lineDict[tree_item.text(2)]
+            icon = QtGui.QIcon()
+            tree_item.setIcon(0, icon)
+            self.lineDict[tree_item.text(2)] = self.setFieldVal(newLine, 'Extra', '', 'locked')
+
+    def unlockSelected(self):
+        selected_items = self.treeWidget.selectedItems()
+        for tree_item in selected_items:
+            self.unlockItem(tree_item)
+
+    def lockSelected(self):
+        selected_items = self.treeWidget.selectedItems()
+        for tree_item in selected_items:
+            self.lockItem(tree_item)
+
+    def toggleLockSelected(self):
+        selected_items = self.treeWidget.selectedItems()
+        for tree_item in selected_items:
+            if tree_item.parent():
+                newLine = self.lineDict[tree_item.text(2)]
+                extra = self.getField(newLine, 'Extra')
+                if 'locked' in extra.split(','):
+                    self.unlockItem(tree_item)
+                else:
+                    self.lockItem(tree_item)
 
     def setTreeHidden(self, hidden):
         root = self.treeWidget.invisibleRootItem()
@@ -551,9 +626,6 @@ class Ui_MainWindow(QMainWindow):
             for cIdx in range(item.childCount()):
                 child = item.child(cIdx)
                 child.setHidden(hidden)
-        
-    def clearSearch(self):
-        self.setTreeHidden(False)
         
     def searchList(self, searchTerm):
         if searchTerm != "":
@@ -569,12 +641,13 @@ class Ui_MainWindow(QMainWindow):
             
             resultItems = self.treeWidget.findItems(searchTerm, searchFlags, 0)
             for item in resultItems:
-                item.setHidden(False)
-                if item.parent():
-                    item.parent().setHidden(False)
-                    if self.findUi.cbxInclSiblings.isChecked():
-                        for cIdx in range(item.parent().childCount()):
-                            item.parent().child(cIdx).setHidden(False)
+                if self.failedBtn.text() == 'Show Failed' and item.text(4) != 'fail':
+                    item.setHidden(False)
+                    if item.parent():
+                        item.parent().setHidden(False)
+                        if self.findUi.cbxInclSiblings.isChecked():
+                            for cIdx in range(item.parent().childCount()):
+                                item.parent().child(cIdx).setHidden(False)
 
     def expColTree(self):
         try:
@@ -732,7 +805,11 @@ class Ui_MainWindow(QMainWindow):
         childItem.setText(2, romname)
         childItem.setText(3, cloneOf)
         childItem.setText(4, status)
-        
+        if romname in self.favList:
+            childItem.setText(6, 'Yes')
+        else:
+            childItem.setText(6, '')
+
         treeItem.insertChild(treeItem.childCount(), childItem)
 
     def loadTree(self, mode):
@@ -810,22 +887,22 @@ class Ui_MainWindow(QMainWindow):
             str(self.treeWidget.topLevelItemCount()) + " Groups containing " + str(len(self.lineDict)) + " games")
         
     def loadList(self, listName):
-        bkpFile = ''
-        if listName is None:
-            listName='Mame'
-        cnt = self.getLineCount()-1
-
         try:
-            if cnt > 1:
+            bkpFile = ''
+            fileToOpen = os.path.join(self.configData.amDir, "romlists\\" + listName + ".txt")
+            if os.path.exists(fileToOpen):
                 self.dataChanged = False
                 self.treeWidget.clear()
                 self.lineDict.clear()
                 self.gameDict.clear()
                 self.headerDict.clear()
                 if self.firstLoad:
-                    bkpFile = os.path.join(self.configData.amDir, "romlists\\"+listName+".txt.bkp")
+                    bkpFile = os.path.join(fileToOpen+".bkp")
+                    with open(bkpFile, "w") as of:
+                        of.write(self.fileHeader)
+                        for line in self.lineDict.values():
+                            of.write(line+'\n')
 
-                fileToOpen = os.path.join(self.configData.amDir, "romlists\\"+listName+".txt")
                 self.treeWidget.setSortingEnabled(False)
                 with open(fileToOpen) as fp:
                     line = fp.readline()
@@ -835,6 +912,7 @@ class Ui_MainWindow(QMainWindow):
                         for i, header in enumerate(headerlist):
                             self.headerDict[header] = i
                     else:
+                        print("No header for ", listName)
                         return
 
                     self.emuDict.clear()
@@ -849,23 +927,25 @@ class Ui_MainWindow(QMainWindow):
                         line = fp.readline()
                     self.addMenu('Emulator', self.emuDict, self.loadDisp)
 
-                    print(self.emuDict)
-                if self.firstLoad:
-                    with open(bkpFile, "w") as of:
-                        of.write(self.fileHeader)
-                        for line in self.lineDict.values():
-                            of.write(line+'\n')
-                    of.close()
-            self.loadTree('parent')    
+                fileToOpen = os.path.join(self.configData.amDir, "romlists\\" + listName + ".tag")
+                if os.path.exists(fileToOpen):
+                    with open(fileToOpen) as fp:
+                        line = fp.readline()
+                        while line:
+                            fav_rom = line.strip('\n\r')
+                            self.favList.append(fav_rom)
+                            line = fp.readline()
 
-            app.processEvents()
+                self.loadTree('parent')
 
-            self.treeWidget.setSortingEnabled(True)
-            self.treeWidget.sortByColumn(0, Qt.AscendingOrder)
-            self.treeWidget.sortByColumn(3, Qt.AscendingOrder)
-            self.treeWidget.resizeColumnToContents(0)
-            self.treeWidget.collapseAll()
-            self.expColBtn.setText("Expand")
+                app.processEvents()
+
+                self.treeWidget.setSortingEnabled(True)
+                self.treeWidget.sortByColumn(0, Qt.AscendingOrder)
+                self.treeWidget.sortByColumn(3, Qt.AscendingOrder)
+                self.treeWidget.resizeColumnToContents(0)
+                self.treeWidget.collapseAll()
+                self.expColBtn.setText("Expand")
 
         except Exception as e:
             traceback.print_exc()
@@ -1049,6 +1129,50 @@ class Ui_MainWindow(QMainWindow):
             traceback.print_exc()
             raise e
 
+    def setFailedHidden(self, hidden):
+        try:
+            root = self.treeWidget.invisibleRootItem()
+            titleCount = root.childCount()
+            for idx in range(titleCount):
+                item = root.child(idx)
+                pass_cnt = 0
+                fail_cnt = 0
+                other_cnt = 0
+                for cIdx in range(item.childCount()):
+                    child = item.child(cIdx)
+                    if child.text(4) == "fail":
+                        child.setHidden(hidden)
+                        fail_cnt += 1
+                    elif child.text(4) == "pass":
+                        pass_cnt += 1
+                    else:
+                        other_cnt += 1
+                if hidden == True and pass_cnt == 0 and other_cnt == 0:
+                    item.setHidden(True)
+                else:
+                    item.setHidden(False)
+
+        except Exception as e:
+            traceback.print_exc()
+            raise e
+
+    def toggleFailed(self):
+        if self.failedBtn.text() == 'Hide Failed':
+            self.setFailedHidden(True)
+            self.failedBtn.setText('Show Failed')
+        else:
+            self.setFailedHidden(False)
+            self.failedBtn.setText('Hide Failed')
+
+    def applyFailed(self):
+        if self.failedBtn.text() == 'Hide Failed':
+            self.setFailedHidden(False)
+        else:
+            self.setFailedHidden(True)
+
+    def clearSearch(self):
+        self.setTreeHidden(False)
+        self.applyFailed()
 
 if __name__ == "__main__":
     import sys

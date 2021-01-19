@@ -99,9 +99,17 @@ class Ui_MainWindow(object):
         self.expColBtn.setSizePolicy(sizePolicy)
         self.expColBtn.setObjectName("expColBtn")
         self.gridLayout.addWidget(self.expColBtn, 1, 3, 1, 1)
+        self.failedBtn = QtWidgets.QPushButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.failedBtn.sizePolicy().hasHeightForWidth())
+        self.failedBtn.setSizePolicy(sizePolicy)
+        self.failedBtn.setObjectName("failedBtn")
+        self.gridLayout.addWidget(self.failedBtn, 1, 7, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 906, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 906, 21))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -123,6 +131,7 @@ class Ui_MainWindow(object):
         self.treeWidget.setSortingEnabled(True)
         self.clearSearchBtn.setText(_translate("MainWindow", "Clear Search"))
         self.expColBtn.setText(_translate("MainWindow", "Expand"))
+        self.failedBtn.setText(_translate("MainWindow", "Hide Failed"))
 
 
 if __name__ == "__main__":

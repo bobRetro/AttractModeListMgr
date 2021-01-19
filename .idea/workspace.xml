@@ -3,9 +3,9 @@
   <component name="ChangeListManager">
     <list default="true" id="692904ea-1415-41f5-8bc8-6bf9a1a553bc" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/AmConfig.py" beforeDir="false" afterPath="$PROJECT_DIR$/AmConfig.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AttractModeMameListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeMameListMgr.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/configDialog.py" beforeDir="false" afterPath="$PROJECT_DIR$/ConfigDialog.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AttractModeMameListMgrWindow.ui" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeMameListMgrWindow.ui" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/window.py" beforeDir="false" afterPath="$PROJECT_DIR$/window.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
