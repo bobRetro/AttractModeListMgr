@@ -306,6 +306,7 @@ class Ui_MainWindow(QMainWindow):
         self.treeWidget.headerItem().setText(4, "Status")
         self.treeWidget.headerItem().setText(5, "Emulator")
         self.treeWidget.headerItem().setText(6, "Favorite")
+        self.treeWidget.headerItem().setText(7, "Category")
         
         self.startBtn.clicked.connect(self.processList)
         self.cloneBtn.clicked.connect(self.unselectClones)
@@ -384,9 +385,10 @@ class Ui_MainWindow(QMainWindow):
 
             # We build the menu.
             menu = QtWidgets.QMenu()
-            self.setLockContextMenu(menu)
-            action = menu.addAction(name)
+            self.setLockContextMenu(menu, point)
+#            action = menu.addAction(name)
             menu.addSeparator()
+            self.setCheckedContextMenu(menu, point)
             action_1 = menu.addAction("Choix 1")
             action_2 = menu.addAction("Choix 2")
             action_3 = menu.addAction("Choix 3")
@@ -558,28 +560,38 @@ class Ui_MainWindow(QMainWindow):
         self.searchBtn.setDefault(True)
         self.searchBtn.setAutoDefault(True)
 
-    def setLockContextMenu(self, menu):
+    def getSelectedExtraFieldCount(self, extra_field):
         item_count = 0
-        locked_count = 0
-
+        field_count = 0
         selected_items = self.treeWidget.selectedItems()
         for tree_item in selected_items:
             if tree_item.parent():
                 item_count += 1
                 newLine = self.lineDict[tree_item.text(2)]
                 extra = self.getField(newLine, 'Extra')
-                if 'locked' in extra.split(','):
-                    locked_count += 1
-        print('Item={} Locked={}'.format(item_count, locked_count))
+                if extra_field in extra.split(','):
+                    field_count += 1
+        return item_count, field_count
+
+    def setLockContextMenu(self, menu, point):
+        name = ""
+        item_count, locked_count = self.getSelectedExtraFieldCount('locked')
+
         if item_count > 0:
-            if locked_count > 0:
-                if locked_count == item_count:
-                    action = menu.addAction("Unlock")
-                    action.triggered.connect(self.unlockSelected)
-                else:
-                    action = menu.addAction("Toggle Lock")
-                    action.triggered.connect(self.toggleLockSelected)
+            if item_count == 1:
+                name = " "+self.treeWidget.itemAt(point).text(0)
+
+            if locked_count == item_count:
+                action = menu.addAction("Unlock"+name)
+                action.triggered.connect(self.unlockSelected)
+            elif locked_count == 0:
+                action = menu.addAction("Lock"+name)
+                action.triggered.connect(self.lockSelected)
             else:
+                action = menu.addAction("Toggle Lock")
+                action.triggered.connect(self.toggleLockSelected)
+                action = menu.addAction("Unlock")
+                action.triggered.connect(self.unlockSelected)
                 action = menu.addAction("Lock")
                 action.triggered.connect(self.lockSelected)
 
@@ -617,6 +629,61 @@ class Ui_MainWindow(QMainWindow):
                 else:
                     self.lockItem(tree_item)
 
+    def checkItem(self, tree_item):
+        if tree_item.parent():
+            newLine = self.lineDict[tree_item.text(2)]
+            self.lineDict[tree_item.text(2)] = self.setFieldVal(newLine, 'Extra', '', 'excluded')
+            tree_item.setCheckState(0, Qt.Checked)
+
+    def uncheckItem(self, tree_item):
+        if tree_item.parent():
+            newLine = self.lineDict[tree_item.text(2)]
+            self.lineDict[tree_item.text(2)] = self.setFieldVal(newLine, 'Extra', 'excluded', '')
+            tree_item.setCheckState(0, Qt.Unchecked)
+
+    def uncheckSelected(self):
+        selected_items = self.treeWidget.selectedItems()
+        for tree_item in selected_items:
+            self.uncheckItem(tree_item)
+
+    def checkSelected(self):
+        selected_items = self.treeWidget.selectedItems()
+        for tree_item in selected_items:
+            self.checkItem(tree_item)
+
+    def toggleCheckSelected(self):
+        selected_items = self.treeWidget.selectedItems()
+        for tree_item in selected_items:
+            if tree_item.parent():
+                newLine = self.lineDict[tree_item.text(2)]
+                extra = self.getField(newLine, 'Extra')
+                if 'excluded' in extra.split(','):
+                    self.checkItem(tree_item)
+                else:
+                    self.uncheckItem(tree_item)
+
+    def setCheckedContextMenu(self, menu, point):
+        name = ""
+        item_count, unchecked_count = self.getSelectedExtraFieldCount('excluded')
+
+        if item_count > 0:
+            if item_count == 1:
+                name = " "+self.treeWidget.itemAt(point).text(0)
+
+            if unchecked_count == item_count:
+                action = menu.addAction("Check"+name)
+                action.triggered.connect(self.checkSelected)
+            elif unchecked_count == 0:
+                action = menu.addAction("Uncheck"+name)
+                action.triggered.connect(self.uncheckSelected)
+            else:
+                action = menu.addAction("Toggle checked")
+                action.triggered.connect(self.toggleCheckSelected)
+                action = menu.addAction("Uncheck")
+                action.triggered.connect(self.uncheckSelected)
+                action = menu.addAction("Check")
+                action.triggered.connect(self.checkSelected)
+
     def setTreeHidden(self, hidden):
         root = self.treeWidget.invisibleRootItem()
         titleCount = root.childCount()
@@ -638,10 +705,10 @@ class Ui_MainWindow(QMainWindow):
 
             if self.findUi.cbxChildren.isChecked():
                 searchFlags |= QtCore.Qt.MatchRecursive
-            
+
             resultItems = self.treeWidget.findItems(searchTerm, searchFlags, 0)
             for item in resultItems:
-                if self.failedBtn.text() == 'Show Failed' and item.text(4) != 'fail':
+                if self.failedBtn.text() == 'Hide Failed' or self.failedBtn.text() == 'Show Failed' and item.text(4) != 'fail':
                     item.setHidden(False)
                     if item.parent():
                         item.parent().setHidden(False)
@@ -770,7 +837,7 @@ class Ui_MainWindow(QMainWindow):
             traceback.print_exc()
             raise e
 
-    def addParent(self, treeItem, newTitle, romname, emu):
+    def addParent(self, treeItem, newTitle, romname, emu, category):
         gameIdx = self.treeWidget.topLevelItemCount()
         self.gameDict[romname] = gameIdx
         if newTitle not in self.titleDict:
@@ -780,9 +847,10 @@ class Ui_MainWindow(QMainWindow):
         treeItem.setFlags(int(treeItem.flags()) | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable | Qt.ItemIsTristate)
         treeItem.setText(0, newTitle)
         treeItem.setText(5, emu)
+        treeItem.setText(7, category)
         return treeItem
 
-    def addChild(self, treeItem, newTitle, variation, romname, cloneOf, status, extra):
+    def addChild(self, treeItem, newTitle, variation, romname, cloneOf, status, extra, category):
         childItem = QTreeWidgetItem()
         extraList = extra.split(',')
         checked = ''
@@ -809,6 +877,7 @@ class Ui_MainWindow(QMainWindow):
             childItem.setText(6, 'Yes')
         else:
             childItem.setText(6, '')
+        childItem.setText(7, category)
 
         treeItem.insertChild(treeItem.childCount(), childItem)
 
@@ -829,6 +898,7 @@ class Ui_MainWindow(QMainWindow):
         statusCol = self.headerDict['Status']
         extraCol = self.headerDict['Extra']
         emuCol = self.headerDict['Emulator']
+        catCol = self.headerDict['Category']
 
         d = QtWidgets.QDialog()
         dui = ProgressDialog(parent=self, flags=Qt.Dialog)
@@ -851,12 +921,13 @@ class Ui_MainWindow(QMainWindow):
                     extra = wordlist[extraCol]
                     newTitle, variation = getTitleVariation(title)
                     emu = wordlist[emuCol]
+                    category = wordlist[catCol]
 
                     if mode == 'parent':
                         if level == 'parent':
                             if cloneOf == "":
-                                treeItem = self.addParent(self.treeWidget, newTitle, romname, emu)
-                                self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
+                                treeItem = self.addParent(self.treeWidget, newTitle, romname, emu, category)
+                                self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
                         else:
                             if cloneOf != "":
                                 if cloneOf in self.gameDict.keys():
@@ -864,16 +935,16 @@ class Ui_MainWindow(QMainWindow):
                                     treeItem = self.treeWidget.topLevelItem(gameIdx)
                                 else:
                                     # Parent ROM not found, create dummy parent using cloneOf value
-                                    treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf, emu)
-                                self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
+                                    treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf, emu, category)
+                                self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
                     elif mode == 'title':
                         if level == 'parent':
                             if newTitle not in self.titleDict:
-                                self.addParent(self.treeWidget, newTitle, romname, emu)
+                                self.addParent(self.treeWidget, newTitle, romname, emu, category)
                         else:
                             gameIdx = self.titleDict[newTitle]
                             treeItem = self.treeWidget.topLevelItem(gameIdx)
-                            self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra)
+                            self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
                     idx += 1
                     dui.setProgressValue(idx)
                     if idx % 100 == 0:
@@ -896,12 +967,6 @@ class Ui_MainWindow(QMainWindow):
                 self.lineDict.clear()
                 self.gameDict.clear()
                 self.headerDict.clear()
-                if self.firstLoad:
-                    bkpFile = os.path.join(fileToOpen+".bkp")
-                    with open(bkpFile, "w") as of:
-                        of.write(self.fileHeader)
-                        for line in self.lineDict.values():
-                            of.write(line+'\n')
 
                 self.treeWidget.setSortingEnabled(False)
                 with open(fileToOpen) as fp:
@@ -926,6 +991,14 @@ class Ui_MainWindow(QMainWindow):
                             self.emuDict[emuname] = 'None'
                         line = fp.readline()
                     self.addMenu('Emulator', self.emuDict, self.loadDisp)
+
+                if self.firstLoad:
+                    bkpFile = os.path.join(fileToOpen+".bkp")
+                    with open(bkpFile, "w") as of:
+                        of.write(self.fileHeader)
+                        for line in self.lineDict.values():
+                            of.write(line+'\n')
+                    self.firstLoad = False
 
                 fileToOpen = os.path.join(self.configData.amDir, "romlists\\" + listName + ".tag")
                 if os.path.exists(fileToOpen):
