@@ -8,6 +8,7 @@ from PyQt5.Qt import *
 from ProgressDialog import ProgressDialog
 from ConfigDialog import Ui_configDialog
 from AmConfig import AmConfig
+from recordtype import recordtype
 from FindDialog import Ui_findDlg
 
 
@@ -170,12 +171,13 @@ def addFieldVal(field, val):
 class Ui_MainWindow(QMainWindow):
     dataChanged = False
     fileHeader = str()
+    romItem = recordtype('romItem', [('lstLine', ''), ('treeIdx', '-1'), ('excluded', 'N'), ('locked', 'N'), ('favorite', 'N')])
+    romDict = dict()
     lineDict = dict()
     lineHeaderDict = dict()
     gameDict = dict()
     titleDict = dict()
     dispDict = dict()
-    romlistDict = dict()
     emuDict = dict()
 
     favList = list()
@@ -808,6 +810,27 @@ class Ui_MainWindow(QMainWindow):
     def removeLineFieldVal(self, line, field, fieldVal):
         return self.addRemoveLineFieldVal(line, field, '', fieldVal)
 
+    def saveAlm(self):
+        fileToOpen = os.path.join(self.configData.amDir, "romLists\\Mame.alm")
+        with open(fileToOpen, "w") as of:
+            of.write('#Name,Excluded,Locked\n')
+            for line in sorted(self.lineDict.values(), key=lambda kv: kv.split(';')[self.lineHeaderDict['Title']]):
+                wordList = line.strip('\n\r').split(';')
+                extra = wordList[self.lineHeaderDict['Extra']]
+                rom = wordList[self.lineHeaderDict['Name']]
+                extraList = extra.split(',')
+                if 'excluded' in extraList or 'locked' in extraList:
+                    newLine = rom
+                    if 'excluded' in extraList:
+                        newLine += ',Y'
+                    else:
+                        newLine += ',N'
+                    if 'locked' in extraList:
+                        newLine += ',Y'
+                    else:
+                        newLine += ',N'
+                    of.write(newLine+'\n')
+
     def saveMame(self):
         try:
             if len(self.lineDict) > 0:
@@ -816,6 +839,7 @@ class Ui_MainWindow(QMainWindow):
                     of.write(self.fileHeader)
                     for line in sorted(self.lineDict.values(), key=lambda kv: kv.split(';')[self.lineHeaderDict['Title']]):
                         of.write(line+'\n')
+                self.saveAlm()
                 self.dataChanged = False
                 self.saveAct.setEnabled(False)
             
@@ -826,6 +850,10 @@ class Ui_MainWindow(QMainWindow):
     def addParent(self, treeItem, newTitle, romname, emu, category):
         gameIdx = self.treeWidget.topLevelItemCount()
         self.gameDict[romname] = gameIdx
+        # if romname in self.romDict:
+        #     self.romDict[romname].treeIdx = gameIdx
+        # else:
+        #     self.romDict[romname] = self.romItem(treeIdx=gameIdx)
         if newTitle not in self.titleDict:
             self.titleDict[newTitle] = gameIdx
         self.treeWidget.addTopLevelItem(QTreeWidgetItem(gameIdx))
@@ -837,10 +865,11 @@ class Ui_MainWindow(QMainWindow):
         return treeItem
 
     def addChild(self, treeItem, newTitle, variation, romname, cloneOf, status, extra, category):
+
         childItem = QTreeWidgetItem()
         extraList = extra.split(',')
 
-        if 'excluded' in extraList:
+        if romname in self.romDict and self.romDict[romname].excluded == 'Y':
             childItem.setCheckState(0, Qt.Unchecked)
         else:
             childItem.setCheckState(0, Qt.Checked)
@@ -864,7 +893,7 @@ class Ui_MainWindow(QMainWindow):
         childItem = treeItem.child(treeItem.childCount()-1)
 
         # Has to be after child is added because only child items can be locked
-        if 'locked' in extraList:
+        if romname in self.romDict and self.romDict[romname].locked == 'Y':
             self.lockItem(childItem)
         else:
             self.unlockItem(childItem)
@@ -880,7 +909,6 @@ class Ui_MainWindow(QMainWindow):
         self.gameDict.clear()
         self.titleDict.clear()
 
-#        romnameCol = self.lineHeaderDict['Name']
         titleCol = self.lineHeaderDict['Title']
         cloneofCol = self.lineHeaderDict['CloneOf']
         statusCol = self.lineHeaderDict['Status']
@@ -917,14 +945,29 @@ class Ui_MainWindow(QMainWindow):
                                 treeItem = self.addParent(self.treeWidget, newTitle, romname, emu, category)
                                 self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
                         else:
-                            if cloneOf != "":
-                                if cloneOf in self.gameDict.keys():
-                                    gameIdx = self.gameDict[cloneOf]
-                                    treeItem = self.treeWidget.topLevelItem(gameIdx)
-                                else:
-                                    # Parent ROM not found, create dummy parent using cloneOf value
-                                    treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf, emu, category)
-                                self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
+                            try:
+                                if cloneOf != "":
+                                    if cloneOf in self.gameDict.keys():
+                                        gameIdx = self.gameDict[cloneOf]
+                                        treeItem = self.treeWidget.topLevelItem(gameIdx)
+                                    else:
+                                        # Parent ROM not found, create dummy parent using cloneOf value
+                                        treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf, emu, category)
+                                    self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra,
+                                                  category)
+                                # if cloneOf != "":
+                                #     if cloneOf in self.romDict.keys():
+                                #         gameIdx = self.romDict[cloneOf].treeIdx
+                                #         treeItem = self.treeWidget.topLevelItem(gameIdx)
+                                #     else:
+                                #         # Parent ROM not found, create dummy parent using cloneOf value
+                                #         treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf, emu, category)
+                                #     self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
+                            except Exception as e:
+                                print("failed "+romname)
+                                #traceback.print_exc()
+                                #raise e
+
                     elif mode == 'title':
                         if level == 'parent':
                             if newTitle not in self.titleDict:
@@ -948,10 +991,12 @@ class Ui_MainWindow(QMainWindow):
     def loadList(self, listName):
         try:
             bkpFile = ''
+
             fileToOpen = os.path.join(self.configData.amDir, "romlists\\" + listName + ".txt")
             if os.path.exists(fileToOpen):
                 self.dataChanged = False
                 self.treeWidget.clear()
+                self.romDict.clear()
                 self.lineDict.clear()
                 self.gameDict.clear()
                 self.lineHeaderDict.clear()
@@ -975,6 +1020,7 @@ class Ui_MainWindow(QMainWindow):
                         romname = wordlist[self.lineHeaderDict['Name']]
                         emuname = wordlist[self.lineHeaderDict['Emulator']]
                         self.lineDict[romname] = line.strip('\n')
+                        self.romDict[romname] = self.romItem(lstLine=line.strip('\n'))
                         if emuname not in self.emuDict.keys():
                             self.emuDict[emuname] = 'None'
                         line = fp.readline()
@@ -996,6 +1042,20 @@ class Ui_MainWindow(QMainWindow):
                             fav_rom = line.strip('\n\r')
                             self.favList.append(fav_rom)
                             line = fp.readline()
+
+                fileToOpen = os.path.join(self.configData.amDir, "romlists\\" + listName + ".alm")
+
+                if os.path.exists(fileToOpen):
+                    with open(fileToOpen) as fp:
+                        line = fp.readline().strip('\n')
+                        while line:
+                            almFields = line.split(',')
+                            if almFields[0] in self.romDict:
+                                self.romDict[almFields[0]].excluded = almFields[1]
+                                self.romDict[almFields[0]].locked = almFields[2]
+                            else:
+                                self.romDict[almFields[0]] = self.romItem(excluded=almFields[1], locked=almFields[2])
+                            line = fp.readline().strip('\n')
 
                 self.loadTree('parent')
 
@@ -1101,7 +1161,7 @@ class Ui_MainWindow(QMainWindow):
 
             for idx in range(titleCount):
                 item = root.child(idx)
-                if item.checkState(0) == QtCore.Qt.Checked:
+                if item.checkState(0) == QtCore.Qt.Checked or item.checkState(0) == QtCore.Qt.PartiallyChecked:
                     romname = ""
                     variation = ""
                     checkedCount = 0
