@@ -91,23 +91,6 @@ def loadDisplayCfg(cfgList, listIdx):
 
     return cfgDict, len(cfgList)
 
-
-def loadAmConfig(fileToOpen):
-    dispDict = dict()
-    if os.path.exists(fileToOpen):
-        cfgList = list()
-    #    fileToOpen = 'e:\\AttractMode\\attract.cfg'
-        with open(fileToOpen, "r") as amConfig:
-            line = amConfig.readline()
-            while line:
-                cfgList.append(line)
-                line = amConfig.readline()
-        for i, line in enumerate(cfgList):
-            lvl, dispKey, dispVal = getCfgLineKeyVal(line)
-            if lvl == 0 and dispKey == 'display':
-                dispDict[dispVal], i = loadDisplayCfg(cfgList, i)
-    return dispDict
-
 def getTitleVariation(title):
     try:
         var = ''
@@ -173,10 +156,9 @@ class Ui_MainWindow(QMainWindow):
     fileHeader = str()
     romItem = recordtype('romItem', [('lstLine', ''), ('treeIdx', '-1'), ('excluded', 'N'), ('locked', 'N'), ('favorite', 'N')])
     romDict = dict()
-    lineDict = dict()
     lineHeaderDict = dict()
-    gameDict = dict()
-    titleDict = dict()
+    parentCloneofDict = dict()
+    parentTitleDict = dict()
     dispDict = dict()
     emuDict = dict()
 
@@ -325,8 +307,8 @@ class Ui_MainWindow(QMainWindow):
         self.expColBtn.clicked.connect(self.expColTree)
         self.parentBtn.setChecked(True)
         self.groupMode = 'parent'
-        self.parentBtn.toggled.connect(self.toggleMode)
-        self.titleBtn.toggled.connect(self.toggleMode)
+        self.parentBtn.toggled.connect(self.toggleParentMode)
+        self.titleBtn.toggled.connect(self.toggleParentMode)
         self.clearSearchBtn.clicked.connect(self.clearSearch)
         self.failedBtn.clicked.connect(self.toggleFailed)
 
@@ -431,13 +413,34 @@ class Ui_MainWindow(QMainWindow):
 
             dispMenu.addAction(dispAct)
 
+    def loadAmConfig(self, fileToOpen):
+        dispDict = dict()
+        if os.path.exists(fileToOpen):
+            cfgList = list()
+            #    fileToOpen = 'e:\\AttractMode\\attract.cfg'
+            with open(fileToOpen, "r") as amConfig:
+                line = amConfig.readline()
+                while line:
+                    cfgList.append(line)
+                    line = amConfig.readline()
+            for i, line in enumerate(cfgList):
+                lvl, dispKey, dispVal = getCfgLineKeyVal(line)
+                if lvl == 0 and dispKey == 'display':
+                    dispDict[dispVal], i = loadDisplayCfg(cfgList, i)
+        else:
+            showErr(
+                'Unable to find AttractMode config file.  Please go to preferences and select the AttractMode directory and ensure a config file exsts')
+        return dispDict
+
     def loadAmConfigFile(self):
         if os.path.exists(self.configfile):
             self.configData.loadJSON(self.configfile)
             self.configUi.amDir.setText(self.configData.amDir)
             self.configUi.mameExe.setText(self.configData.mameExe)
-            self.dispDict = loadAmConfig(os.path.join(self.configData.amDir, "attract.cfg"))
+            self.dispDict = self.loadAmConfig(os.path.join(self.configData.amDir, "attract.cfg"))
             self.addMenu('Display', self.dispDict, self.loadDisp)
+            if 'Mame' in self.dispDict:
+                self.loadList('Mame')
 
     def showPreferences(self):
         try:
@@ -528,7 +531,7 @@ class Ui_MainWindow(QMainWindow):
             self.dataChanged = True
             if item.parent():
                 romName = item.text(self.col_rom)
-                newLine = self.lineDict[romName]
+                newLine = self.romDict[romName].lstLine
 
                 if column == self.col_status:
                     status = item.text(self.col_status)
@@ -545,9 +548,9 @@ class Ui_MainWindow(QMainWindow):
                         newLine = self.addLineFieldVal(newLine, 'Extra', 'locked')
                     else:
                         newLine = self.removeLineFieldVal(newLine, 'Extra', 'locked')
-                self.lineDict[romName] = newLine
+                self.romDict[romName].lstLine = newLine
 
-    def toggleMode(self):
+    def toggleParentMode(self):
         radioButton = self.sender()
         if radioButton.isChecked():
             if radioButton.objectName() == 'parentBtn':
@@ -555,6 +558,8 @@ class Ui_MainWindow(QMainWindow):
             elif radioButton.objectName() == 'titleBtn':
                 self.groupMode = 'title'
             self.loadTree(self.groupMode)
+            self.treeWidget.expandAll()
+            self.expColBtn.setText("Collapse")
 
     def searchLineClicked(self):
         self.searchBtn.setDefault(True)
@@ -573,7 +578,7 @@ class Ui_MainWindow(QMainWindow):
         for tree_item in selected_items:
             if tree_item.parent():
                 item_count += 1
-                newLine = self.lineDict[tree_item.text(self.col_rom)]
+                newLine = self.romDict[tree_item.text(self.col_rom)].lstLine
                 extra = self.getLineField(newLine, 'Extra')
                 if extra_field in extra.split(','):
                     field_count += 1
@@ -814,7 +819,7 @@ class Ui_MainWindow(QMainWindow):
         fileToOpen = os.path.join(self.configData.amDir, "romLists\\Mame.alm")
         with open(fileToOpen, "w") as of:
             of.write('#Name,Excluded,Locked\n')
-            for line in sorted(self.lineDict.values(), key=lambda kv: kv.split(';')[self.lineHeaderDict['Title']]):
+            for line in sorted(self.romDict.values(), key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
                 wordList = line.strip('\n\r').split(';')
                 extra = wordList[self.lineHeaderDict['Extra']]
                 rom = wordList[self.lineHeaderDict['Name']]
@@ -833,11 +838,11 @@ class Ui_MainWindow(QMainWindow):
 
     def saveMame(self):
         try:
-            if len(self.lineDict) > 0:
+            if len(self.romDict) > 0:
                 fileToOpen = os.path.join(self.configData.amDir, "romlists\\Mame.txt")
                 with open(fileToOpen, "w") as of:
                     of.write(self.fileHeader)
-                    for line in sorted(self.lineDict.values(), key=lambda kv: kv.split(';')[self.lineHeaderDict['Title']]):
+                    for line in sorted(self.romDict.values(), key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
                         of.write(line+'\n')
                 self.saveAlm()
                 self.dataChanged = False
@@ -849,13 +854,13 @@ class Ui_MainWindow(QMainWindow):
 
     def addParent(self, treeItem, newTitle, romname, emu, category):
         gameIdx = self.treeWidget.topLevelItemCount()
-        self.gameDict[romname] = gameIdx
+        self.parentCloneofDict[romname] = gameIdx
         # if romname in self.romDict:
         #     self.romDict[romname].treeIdx = gameIdx
         # else:
         #     self.romDict[romname] = self.romItem(treeIdx=gameIdx)
-        if newTitle not in self.titleDict:
-            self.titleDict[newTitle] = gameIdx
+        if newTitle not in self.parentTitleDict:
+            self.parentTitleDict[newTitle] = gameIdx
         self.treeWidget.addTopLevelItem(QTreeWidgetItem(gameIdx))
         treeItem = self.treeWidget.topLevelItem(gameIdx)
         treeItem.setFlags(int(treeItem.flags()) | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable | Qt.ItemIsTristate)
@@ -899,15 +904,15 @@ class Ui_MainWindow(QMainWindow):
             self.unlockItem(childItem)
 
     def loadTree(self, mode):
-        if len(self.lineDict) == 0:
+        if len(self.romDict) == 0:
             return
 
         self.treeWidget.clear()
         app.processEvents()
         
         self.treeWidget.setSortingEnabled(False)
-        self.gameDict.clear()
-        self.titleDict.clear()
+        self.parentCloneofDict.clear()
+        self.parentTitleDict.clear()
 
         titleCol = self.lineHeaderDict['Title']
         cloneofCol = self.lineHeaderDict['CloneOf']
@@ -920,13 +925,14 @@ class Ui_MainWindow(QMainWindow):
         dui = ProgressDialog(parent=self, flags=Qt.Dialog)
         dui.setupUi(d)
         d.show()
-        dui.setProgressRange(1, len(self.lineDict)*2)
+        dui.setProgressRange(1, len(self.romDict)*2)
 
         idx = 0
         self.treeLoading = True
         
         for level in ('parent', 'child'):
-            for romname, line in self.lineDict.items():
+            for romname, romItem in self.romDict.items():
+                line = romItem.lstLine
                 try:
                     if dui.isCancelled():
                         break
@@ -947,8 +953,8 @@ class Ui_MainWindow(QMainWindow):
                         else:
                             try:
                                 if cloneOf != "":
-                                    if cloneOf in self.gameDict.keys():
-                                        gameIdx = self.gameDict[cloneOf]
+                                    if cloneOf in self.parentCloneofDict.keys():
+                                        gameIdx = self.parentCloneofDict[cloneOf]
                                         treeItem = self.treeWidget.topLevelItem(gameIdx)
                                     else:
                                         # Parent ROM not found, create dummy parent using cloneOf value
@@ -970,10 +976,10 @@ class Ui_MainWindow(QMainWindow):
 
                     elif mode == 'title':
                         if level == 'parent':
-                            if newTitle not in self.titleDict:
+                            if newTitle not in self.parentTitleDict:
                                 self.addParent(self.treeWidget, newTitle, romname, emu, category)
                         else:
-                            gameIdx = self.titleDict[newTitle]
+                            gameIdx = self.parentTitleDict[newTitle]
                             treeItem = self.treeWidget.topLevelItem(gameIdx)
                             self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
                     idx += 1
@@ -981,12 +987,13 @@ class Ui_MainWindow(QMainWindow):
                     if idx % 100 == 0:
                         app.processEvents()
                 except Exception as e:
-                    traceback.print_exc()
+                    print(line)
+                    #traceback.print_exc()
                     raise e
         self.treeLoading = False
         self.treeWidget.setSortingEnabled(True)
         self.statusBar().showMessage(
-            str(self.treeWidget.topLevelItemCount()) + " Groups containing " + str(len(self.lineDict)) + " games")
+            str(self.treeWidget.topLevelItemCount()) + " Groups containing " + str(len(self.romDict)) + " games")
         
     def loadList(self, listName):
         try:
@@ -997,8 +1004,7 @@ class Ui_MainWindow(QMainWindow):
                 self.dataChanged = False
                 self.treeWidget.clear()
                 self.romDict.clear()
-                self.lineDict.clear()
-                self.gameDict.clear()
+                self.parentCloneofDict.clear()
                 self.lineHeaderDict.clear()
 
                 self.treeWidget.setSortingEnabled(False)
@@ -1019,7 +1025,6 @@ class Ui_MainWindow(QMainWindow):
                         wordlist = line.strip('\n\r').split(';')
                         romname = wordlist[self.lineHeaderDict['Name']]
                         emuname = wordlist[self.lineHeaderDict['Emulator']]
-                        self.lineDict[romname] = line.strip('\n')
                         self.romDict[romname] = self.romItem(lstLine=line.strip('\n'))
                         if emuname not in self.emuDict.keys():
                             self.emuDict[emuname] = 'None'
@@ -1030,8 +1035,8 @@ class Ui_MainWindow(QMainWindow):
                     bkpFile = os.path.join(fileToOpen+".bkp")
                     with open(bkpFile, "w") as of:
                         of.write(self.fileHeader)
-                        for line in self.lineDict.values():
-                            of.write(line+'\n')
+                        for romItem in self.romDict.values():
+                            of.write(romItem.lstLine+'\n')
                     self.firstLoad = False
 
                 fileToOpen = os.path.join(self.configData.amDir, "romlists\\" + listName + ".tag")
@@ -1047,6 +1052,9 @@ class Ui_MainWindow(QMainWindow):
 
                 if os.path.exists(fileToOpen):
                     with open(fileToOpen) as fp:
+                        # Read in the header
+                        #TODO actually use header
+                        line = fp.readline().strip('\n')
                         line = fp.readline().strip('\n')
                         while line:
                             almFields = line.split(',')

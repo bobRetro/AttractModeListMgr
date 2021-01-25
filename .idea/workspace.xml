@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="692904ea-1415-41f5-8bc8-6bf9a1a553bc" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/AttractModeMameListMgr.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeMameListMgr.cfg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AttractModeMameListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeMameListMgr.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -90,6 +89,20 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/AttractModeMameListMgr.py</url>
+          <line>955</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/AttractModeMameListMgr.py</url>
+          <line>933</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
         <watch expression="self.romDict['005'].locked" language="Python" />
