@@ -4,6 +4,8 @@
     <list default="true" id="692904ea-1415-41f5-8bc8-6bf9a1a553bc" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AttractModeMameListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeMameListMgr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FindDialog.py" beforeDir="false" afterPath="$PROJECT_DIR$/FindDialog.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FindDlg.ui" beforeDir="false" afterPath="$PROJECT_DIR$/FindDlg.ui" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -93,13 +95,8 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/AttractModeMameListMgr.py</url>
-          <line>955</line>
-          <option name="timeStamp" value="2" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/AttractModeMameListMgr.py</url>
-          <line>933</line>
-          <option name="timeStamp" value="3" />
+          <line>835</line>
+          <option name="timeStamp" value="4" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
@@ -107,6 +104,7 @@
       <configuration name="PythonConfigurationType">
         <watch expression="self.romDict['005'].locked" language="Python" />
         <watch expression="romname" language="Python" />
+        <watch expression="self.romDict" language="Python" />
       </configuration>
     </watches-manager>
   </component>

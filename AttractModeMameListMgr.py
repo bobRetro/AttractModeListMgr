@@ -285,10 +285,10 @@ class Ui_MainWindow(QMainWindow):
     def setupUi(self, myMainWindow):
         self._windowLayout()
         # Dictates the order of the columns
-        self.column_headers = ['Game', 'Variation', 'Rom', 'CloneOf', 'Category', 'Status', 'Emulator', 'Favorite', 'Locked_Flag','Favorite_Flag']
+        self.column_headers = ['Name', 'Variation', 'Rom', 'CloneOf', 'Category', 'Status', 'Emulator', 'Favorite']
         for idx, header in enumerate(self.column_headers):
             self.treeWidget.headerItem().setText(idx, header)
-        self.col_game           = self.column_headers.index('Game')
+        self.col_name           = self.column_headers.index('Name')
         self.col_variation      = self.column_headers.index('Variation')
         self.col_rom            = self.column_headers.index('Rom')
         self.col_cloneof        = self.column_headers.index('CloneOf')
@@ -296,12 +296,7 @@ class Ui_MainWindow(QMainWindow):
         self.col_status         = self.column_headers.index('Status')
         self.col_emulator       = self.column_headers.index('Emulator')
         self.col_favorite       = self.column_headers.index('Favorite')
-        self.col_locked_flag    = self.column_headers.index('Locked_Flag')
-        self.col_favorite_flag  = self.column_headers.index('Favorite_Flag')
 
-        self.treeWidget.setColumnHidden(self.col_locked_flag, True)
-        self.treeWidget.setColumnHidden(self.col_favorite_flag, True)
-        
         self.startBtn.clicked.connect(self.processList)
         self.cloneBtn.clicked.connect(self.unselectClones)
         self.expColBtn.clicked.connect(self.expColTree)
@@ -310,9 +305,10 @@ class Ui_MainWindow(QMainWindow):
         self.parentBtn.toggled.connect(self.toggleParentMode)
         self.titleBtn.toggled.connect(self.toggleParentMode)
         self.clearSearchBtn.clicked.connect(self.clearSearch)
-        self.failedBtn.clicked.connect(self.toggleFailed)
+        self.failedBtn.clicked.connect(self.toggleUncheckedHidden)
 
         self.treeWidget.itemChanged[QTreeWidgetItem, int].connect(self.treeItemChanged)
+
 #        self.treeWidget.itemSelectionChanged.connect(self.treeItemSelected)
         
         menubar = self.menuBar()
@@ -374,7 +370,7 @@ class Ui_MainWindow(QMainWindow):
                 return
 
 #            item = self.treeWidget.itemAt(point)
-#            name = item.text(self.col_game)  # The text of the node.
+#            name = item.text(self.col_name)  # The text of the node.
 
             # Context menu
             menu = QtWidgets.QMenu()
@@ -518,7 +514,7 @@ class Ui_MainWindow(QMainWindow):
         self.titleBtn.setText(_translate(       "MainWindow", "Title"))
         self.startBtn.setText(_translate(       "MainWindow", "Validate"))
         self.expColBtn.setText(_translate(      "MainWindow", "Expand"))
-        self.failedBtn.setText(_translate(      "MainWindow", "Hide Failed"))
+        self.failedBtn.setText(_translate(      "MainWindow", "Hide Unchecked"))
         self.clearSearchBtn.setText(_translate( "MainWindow", "Clear Search"))
         self.treeWidget.setSortingEnabled(True)
 
@@ -537,17 +533,12 @@ class Ui_MainWindow(QMainWindow):
                     status = item.text(self.col_status)
                     newLine = self.setLineStatus(newLine, status)
 
-                if column == self.col_game:
+                if column == self.col_name:
                     if item.checkState(0) == QtCore.Qt.Checked:
                         newLine = self.removeLineFieldVal(newLine, 'Extra', 'excluded')
                     else:
                         newLine = self.addLineFieldVal(newLine, 'Extra', 'excluded')
 
-                if column == self.col_locked_flag:
-                    if item.text(self.col_locked_flag) == 'Y':
-                        newLine = self.addLineFieldVal(newLine, 'Extra', 'locked')
-                    else:
-                        newLine = self.removeLineFieldVal(newLine, 'Extra', 'locked')
                 self.romDict[romName].lstLine = newLine
 
     def toggleParentMode(self):
@@ -584,26 +575,27 @@ class Ui_MainWindow(QMainWindow):
                     field_count += 1
         return item_count, field_count
 
-    def getSelectedColValueCount(self, col_idx, col_value):
+    def getSelectedColValueCount(self, column_name, col_value):
         item_count = 0
         value_count = 0
         selected_items = self.treeWidget.selectedItems()
         for tree_item in selected_items:
             if tree_item.parent():
                 item_count += 1
-                if tree_item.text(col_idx) == col_value:
+                if column_name == 'locked' and self.romDict[tree_item.text(self.col_rom)].locked == col_value or\
+                        column_name == 'favorite' and self.romDict[tree_item.text(self.col_rom)].favorite == col_value:
                     value_count += 1
         return item_count, value_count
 
     def lockItem(self, tree_item):
         if tree_item.parent():
             tree_item.setIcon(0, self.lockIcon)
-            tree_item.setText(self.col_locked_flag, 'Y')
+            self.romDict[tree_item.text(self.col_rom)].locked = 'Y'
 
     def unlockItem(self, tree_item):
         if tree_item.parent():
             tree_item.setIcon(0, self.unlockIcon)
-            tree_item.setText(self.col_locked_flag, 'N')
+            self.romDict[tree_item.text(self.col_rom)].locked = 'N'
 
     def setSelectedLockStatus(self, status):
         selected_items = self.treeWidget.selectedItems()
@@ -614,18 +606,18 @@ class Ui_MainWindow(QMainWindow):
                 elif status == 'unlock':
                     self.unlockItem(tree_item)
                 elif status == 'toggle':
-                    if tree_item.text(self.col_locked_flag) == 'Y':
+                    if self.romDict[tree_item.text(self.col_rom)].locked == 'Y':
                         self.unlockItem(tree_item)
                     else:
                         self.lockItem(tree_item)
 
     def setLockedContextMenu(self, menu, point):
         name = ""
-        item_count, locked_count = self.getSelectedColValueCount(self.col_locked_flag, 'N')
+        item_count, locked_count = self.getSelectedColValueCount('locked', 'N')
 
         if item_count > 0:
             if item_count == 1:
-                name = " "+self.treeWidget.itemAt(point).text(self.col_game)
+                name = " "+self.treeWidget.itemAt(point).text(self.col_name)
 
             if locked_count > 0 and locked_count != item_count:
                 action = menu.addAction("Toggle locked")
@@ -640,14 +632,14 @@ class Ui_MainWindow(QMainWindow):
                 action.triggered.connect(functools.partial(self.setSelectedLockStatus, 'unlock'))
 
     def favoriteItem(self, tree_item):
-        if tree_item.parent() and tree_item.text(self.col_locked_flag) == 'N':
+        if tree_item.parent() and self.romDict[tree_item.text(self.col_rom)].locked == 'N':
             tree_item.setIcon(self.col_favorite, self.starIcon)
-            tree_item.setText(self.col_favorite_flag, 'Y')
+            self.romDict[tree_item.text(self.col_rom)].favorite = 'Y'
 
     def unfavoriteItem(self, tree_item):
-        if tree_item.parent() and tree_item.text(self.col_locked_flag) == 'N':
+        if tree_item.parent() and self.romDict[tree_item.text(self.col_rom)].locked == 'N':
             tree_item.setIcon(self.col_favorite, self.blankIcon)
-            tree_item.setText(self.col_favorite_flag, 'N')
+            self.romDict[tree_item.text(self.col_rom)].favorite = 'N'
 
     def setSelectedFavoriteStatus(self, status):
         selected_items = self.treeWidget.selectedItems()
@@ -658,18 +650,18 @@ class Ui_MainWindow(QMainWindow):
                 elif status == 'unfavorite':
                     self.unfavoriteItem(tree_item)
                 elif status == 'toggle':
-                    if tree_item.text(self.col_favorite_flag) == 'Y':
+                    if self.romDict[tree_item.text(self.col_rom)].favorite == 'Y':
                         self.unfavoriteItem(tree_item)
                     else:
                         self.favoriteItem(tree_item)
 
     def setFavoriteContextMenu(self, menu, point):
         name = ""
-        item_count, favorite_count = self.getSelectedColValueCount(self.col_favorite_flag, 'N')
+        item_count, favorite_count = self.getSelectedColValueCount('favorite', 'N')
 
         if item_count > 0:
             if item_count == 1:
-                name = " "+self.treeWidget.itemAt(point).text(self.col_game)
+                name = " "+self.treeWidget.itemAt(point).text(self.col_name)
 
             if favorite_count > 0 and favorite_count != item_count:
                 action = menu.addAction("Toggle favorites")
@@ -686,13 +678,13 @@ class Ui_MainWindow(QMainWindow):
     def setSelectedCheckStatus(self, status):
         selected_items = self.treeWidget.selectedItems()
         for tree_item in selected_items:
-            if tree_item.parent() and tree_item.text(self.col_locked_flag) == 'N':
+            if tree_item.parent() and self.romDict[tree_item.text(self.col_rom)].locked == 'N':
                 if status == 'check':
                     tree_item.setCheckState(0, Qt.Checked)
                 elif status == 'uncheck':
                     tree_item.setCheckState(0, Qt.Unchecked)
                 elif status == 'toggle':
-                    if tree_item.checkState(self.col_game) == QtCore.Qt.Checked:
+                    if tree_item.checkState(self.col_name) == QtCore.Qt.Checked:
                         tree_item.setCheckState(0, Qt.Unchecked)
                     else:
                         tree_item.setCheckState(0, Qt.Checked)
@@ -703,7 +695,7 @@ class Ui_MainWindow(QMainWindow):
 
         if item_count > 0:
             if item_count == 1:
-                name = " "+self.treeWidget.itemAt(point).text(self.col_game)
+                name = " "+self.treeWidget.itemAt(point).text(self.col_name)
 
             if unchecked_count > 0 and unchecked_count != item_count:
                 action = menu.addAction("Toggle checked")
@@ -727,7 +719,7 @@ class Ui_MainWindow(QMainWindow):
                 child = item.child(cIdx)
                 child.setHidden(hidden)
         
-    def searchList(self, searchTerm):
+    def searchList(self, field, searchTerm):
         if searchTerm != "":
             self.setTreeHidden(True)
 
@@ -739,9 +731,9 @@ class Ui_MainWindow(QMainWindow):
             if self.findUi.cbxChildren.isChecked():
                 searchFlags |= QtCore.Qt.MatchRecursive
 
-            resultItems = self.treeWidget.findItems(searchTerm, searchFlags, 0)
+            resultItems = self.treeWidget.findItems(searchTerm, searchFlags, self.column_headers.index(field))
             for item in resultItems:
-                if self.failedBtn.text() == 'Hide Failed' or self.failedBtn.text() == 'Show Failed' and item.text(self.col_status) != 'fail':
+                if self.failedBtn.text() == 'Hide Unchecked' or self.failedBtn.text() == 'Show Unchecked' and item.checkState(0) != QtCore.Qt.Unchecked:
                     item.setHidden(False)
                     if item.parent():
                         item.parent().setHidden(False)
@@ -819,18 +811,18 @@ class Ui_MainWindow(QMainWindow):
         fileToOpen = os.path.join(self.configData.amDir, "romLists\\Mame.alm")
         with open(fileToOpen, "w") as of:
             of.write('#Name,Excluded,Locked\n')
-            for line in sorted(self.romDict.values(), key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
-                wordList = line.strip('\n\r').split(';')
+            for romItem in sorted(self.romDict.values(), key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
+                wordList = romItem.lstLine.strip('\n\r').split(';')
                 extra = wordList[self.lineHeaderDict['Extra']]
                 rom = wordList[self.lineHeaderDict['Name']]
                 extraList = extra.split(',')
-                if 'excluded' in extraList or 'locked' in extraList:
+                if self.romDict[rom].locked == 'Y' or self.romDict[rom].excluded == 'Y':
                     newLine = rom
-                    if 'excluded' in extraList:
+                    if self.romDict[rom].excluded == 'Y':
                         newLine += ',Y'
                     else:
                         newLine += ',N'
-                    if 'locked' in extraList:
+                    if self.romDict[rom].locked == 'Y':
                         newLine += ',Y'
                     else:
                         newLine += ',N'
@@ -842,7 +834,8 @@ class Ui_MainWindow(QMainWindow):
                 fileToOpen = os.path.join(self.configData.amDir, "romlists\\Mame.txt")
                 with open(fileToOpen, "w") as of:
                     of.write(self.fileHeader)
-                    for line in sorted(self.romDict.values(), key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
+                    for romItem in sorted(self.romDict.values(), key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
+                        line = self.removeLineFieldVal(romItem.lstLine, 'Extra', 'locked')
                         of.write(line+'\n')
                 self.saveAlm()
                 self.dataChanged = False
@@ -864,7 +857,7 @@ class Ui_MainWindow(QMainWindow):
         self.treeWidget.addTopLevelItem(QTreeWidgetItem(gameIdx))
         treeItem = self.treeWidget.topLevelItem(gameIdx)
         treeItem.setFlags(int(treeItem.flags()) | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable | Qt.ItemIsTristate)
-        treeItem.setText(self.col_game, newTitle)
+        treeItem.setText(self.col_name, newTitle)
         treeItem.setText(self.col_emulator, emu)
         treeItem.setText(self.col_category, category)
         return treeItem
@@ -879,7 +872,7 @@ class Ui_MainWindow(QMainWindow):
         else:
             childItem.setCheckState(0, Qt.Checked)
 
-        childItem.setText(self.col_game,        newTitle)
+        childItem.setText(self.col_name,        newTitle)
         childItem.setText(self.col_variation,   variation)
         childItem.setText(self.col_rom,         romname)
         childItem.setText(self.col_cloneof,     cloneOf)
@@ -887,10 +880,10 @@ class Ui_MainWindow(QMainWindow):
 
         if romname in self.favList:
             childItem.setIcon(self.col_favorite, self.starIcon)
-            childItem.setText(self.col_favorite_flag, 'Y')
+            self.romDict[childItem.text(self.col_rom)].favorite = 'Y'
         else:
             childItem.setIcon(self.col_favorite, self.blankIcon)
-            childItem.setText(self.col_favorite_flag, 'N')
+            self.romDict[childItem.text(self.col_rom)].favorite = 'N'
 
         childItem.setText(self.col_category, category)
 
@@ -1070,9 +1063,9 @@ class Ui_MainWindow(QMainWindow):
                 app.processEvents()
 
                 self.treeWidget.setSortingEnabled(True)
-                self.treeWidget.sortByColumn(self.col_game, Qt.AscendingOrder)
+                self.treeWidget.sortByColumn(self.col_name, Qt.AscendingOrder)
                 self.treeWidget.sortByColumn(self.col_cloneof, Qt.AscendingOrder)
-                self.treeWidget.resizeColumnToContents(self.col_game)
+                self.treeWidget.resizeColumnToContents(self.col_name)
                 self.treeWidget.expandAll()
                 self.expColBtn.setText("Collapse")
 
@@ -1249,32 +1242,32 @@ class Ui_MainWindow(QMainWindow):
                         for cIdx in range(item.childCount()):
                             child = item.child(cIdx)
                             if (child.checkState(0) == QtCore.Qt.Checked
-                                    and child.text(self.col_cloneof) == parentRom and child.text(self.col_locked_flag) != 'Y'):
+                                    and child.text(self.col_cloneof) == parentRom and self.romDict[tree_item.text(self.col_rom)].locked == 'N'):
                                 child.setCheckState(0, Qt.Unchecked)
 #            self.findDuplicates()
         except Exception as e:
             traceback.print_exc()
             raise e
 
-    def setFailedHidden(self, hidden):
+    def setUncheckedHidden(self, hidden):
         try:
             root = self.treeWidget.invisibleRootItem()
             titleCount = root.childCount()
             for idx in range(titleCount):
                 item = root.child(idx)
-                pass_cnt = 0
-                fail_cnt = 0
+                checked_cnt = 0
+                unchecked_cnt = 0
                 other_cnt = 0
                 for cIdx in range(item.childCount()):
                     child = item.child(cIdx)
-                    if child.text(self.col_status) == "fail":
+                    if child.checkState(0) == QtCore.Qt.Unchecked:
                         child.setHidden(hidden)
-                        fail_cnt += 1
-                    elif child.text(self.col_status) == "pass":
-                        pass_cnt += 1
+                        unchecked_cnt += 1
+                    elif item.checkState(0) == QtCore.Qt.Checked:
+                        checked_cnt += 1
                     else:
                         other_cnt += 1
-                if hidden == True and pass_cnt == 0 and other_cnt == 0:
+                if hidden and checked_cnt == 0 and other_cnt == 0:
                     item.setHidden(True)
                 else:
                     item.setHidden(False)
@@ -1283,23 +1276,23 @@ class Ui_MainWindow(QMainWindow):
             traceback.print_exc()
             raise e
 
-    def toggleFailed(self):
-        if self.failedBtn.text() == 'Hide Failed':
-            self.setFailedHidden(True)
-            self.failedBtn.setText('Show Failed')
+    def toggleUncheckedHidden(self):
+        if self.failedBtn.text() == 'Hide Unchecked':
+            self.setUncheckedHidden(True)
+            self.failedBtn.setText('Show Unchecked')
         else:
-            self.setFailedHidden(False)
-            self.failedBtn.setText('Hide Failed')
+            self.setUncheckedHidden(False)
+            self.failedBtn.setText('Hide Unchecked')
 
-    def applyFailed(self):
-        if self.failedBtn.text() == 'Hide Failed':
-            self.setFailedHidden(False)
+    def applyUncheckedHidden(self):
+        if self.failedBtn.text() == 'Hide Unchecked':
+            self.setUncheckedHidden(False)
         else:
-            self.setFailedHidden(True)
+            self.setUncheckedHidden(True)
 
     def clearSearch(self):
         self.setTreeHidden(False)
-        self.applyFailed()
+        self.applyUncheckedHidden()
 
 if __name__ == "__main__":
     import sys
