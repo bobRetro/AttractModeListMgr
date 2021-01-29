@@ -24,6 +24,6 @@ class AmConfig:
             self.outFilePath = jsonData["outFilePath"]
             self.mameExe = jsonData["mameExe"]
             self.display = jsonData["display"]
-            print(self.display)
-            print(self.display[1])
+#            print(self.display)
+#            print(self.display[1])
                     

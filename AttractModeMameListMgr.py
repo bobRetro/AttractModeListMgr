@@ -161,6 +161,11 @@ class Ui_MainWindow(QMainWindow):
     parentTitleDict = dict()
     dispDict = dict()
     emuDict = dict()
+    resultItems = list()
+    searchOn = False
+    findText = ''
+    findField = ''
+    hideUncheckedOn = False
 
     favList = list()
     configData = AmConfig()
@@ -399,13 +404,11 @@ class Ui_MainWindow(QMainWindow):
         # Clear out the menu
         for a in dispMenu.actions():
             dispMenu.removeAction(a)
-            print('Remove {}'.format(a.text()))
 
         # Add the diplays as submenus
         for s in subMenuDict.keys():
             dispAct = QAction(s, self)
             dispAct.triggered.connect(connectAction)
-#            print("Rom List for {} is {}".format(d, self.dispDict[d]['romlist']))
 
             dispMenu.addAction(dispAct)
 
@@ -536,8 +539,10 @@ class Ui_MainWindow(QMainWindow):
                 if column == self.col_name:
                     if item.checkState(0) == QtCore.Qt.Checked:
                         newLine = self.removeLineFieldVal(newLine, 'Extra', 'excluded')
+                        self.romDict[romName].excluded = 'N'
                     else:
                         newLine = self.addLineFieldVal(newLine, 'Extra', 'excluded')
+                        self.romDict[romName].excluded = 'Y'
 
                 self.romDict[romName].lstLine = newLine
 
@@ -551,6 +556,10 @@ class Ui_MainWindow(QMainWindow):
             self.loadTree(self.groupMode)
             self.treeWidget.expandAll()
             self.expColBtn.setText("Collapse")
+        if self.hideUncheckedOn:
+            self.setUncheckedHidden(True)
+        if self.searchOn and self.findField != "" and self.findText != "":
+            self.searchList(self.findField, self.findText)
 
     def searchLineClicked(self):
         self.searchBtn.setDefault(True)
@@ -718,9 +727,32 @@ class Ui_MainWindow(QMainWindow):
             for cIdx in range(item.childCount()):
                 child = item.child(cIdx)
                 child.setHidden(hidden)
-        
+
+    def showSearchResults(self):
+        for item in self.resultItems:
+            if not self.hideUncheckedOn or item.checkState(0) == Qt.Checked:
+                item.setHidden(False)
+                if item.parent():
+                    item.parent().setHidden(False)
+                    if self.findUi.cbxInclSiblings.isChecked():
+                        for cIdx in range(item.parent().childCount()):
+                            if not self.hideUncheckedOn or item.parent().child(cIdx).checkState(0) == Qt.Checked:
+                                item.parent().child(cIdx).setHidden(False)
+
+        # for item in self.resultItems:
+        #     if not item.parent() and not item.isHidden():
+        #         showParent = False
+        #         for cIdx in range(item.childCount()):
+        #             if not item.child(cIdx).isHidden():
+        #                 showParent = True
+        #         if showParent:
+        #             item.setHidden(True)
+
     def searchList(self, field, searchTerm):
-        if searchTerm != "":
+        if searchTerm != "" and field != "":
+            self.findField = field
+            self.findText = searchTerm
+
             self.setTreeHidden(True)
 
             if self.findUi.cbxExactMatch.isChecked():
@@ -731,15 +763,10 @@ class Ui_MainWindow(QMainWindow):
             if self.findUi.cbxChildren.isChecked():
                 searchFlags |= QtCore.Qt.MatchRecursive
 
-            resultItems = self.treeWidget.findItems(searchTerm, searchFlags, self.column_headers.index(field))
-            for item in resultItems:
-                if self.failedBtn.text() == 'Hide Unchecked' or self.failedBtn.text() == 'Show Unchecked' and item.checkState(0) != QtCore.Qt.Unchecked:
-                    item.setHidden(False)
-                    if item.parent():
-                        item.parent().setHidden(False)
-                        if self.findUi.cbxInclSiblings.isChecked():
-                            for cIdx in range(item.parent().childCount()):
-                                item.parent().child(cIdx).setHidden(False)
+            self.resultItems = self.treeWidget.findItems(searchTerm, searchFlags, self.column_headers.index(field))
+            self.showSearchResults()
+            self.searchOn = True
+            self.showStatus()
 
     def expColTree(self):
         try:
@@ -896,6 +923,28 @@ class Ui_MainWindow(QMainWindow):
         else:
             self.unlockItem(childItem)
 
+    def showStatus(self):
+        root = self.treeWidget.invisibleRootItem()
+        titleCount = root.childCount()
+        hiddenGroupCount = 0
+        hiddenChildCount = 0
+        #self.treeWidget.topLevelItemCount()
+        for idx in range(titleCount):
+            item = root.child(idx)
+            if item.isHidden():
+                hiddenGroupCount += 1
+            for cIdx in range(item.childCount()):
+                child = item.child(cIdx)
+                if child.isHidden():
+                    hiddenChildCount += 1
+
+        if hiddenGroupCount > 0 or hiddenChildCount >0:
+            self.statusBar().showMessage(
+                "{} Groups ({} hidden) containing {} games ({} hidden)".format(titleCount, hiddenGroupCount, len(self.romDict), hiddenChildCount))
+        else:
+            self.statusBar().showMessage(
+                "{} Groups containing {} games".format(titleCount, len(self.romDict)))
+
     def loadTree(self, mode):
         if len(self.romDict) == 0:
             return
@@ -980,14 +1029,12 @@ class Ui_MainWindow(QMainWindow):
                     if idx % 100 == 0:
                         app.processEvents()
                 except Exception as e:
-                    print(line)
-                    #traceback.print_exc()
+                    traceback.print_exc()
                     raise e
         self.treeLoading = False
         self.treeWidget.setSortingEnabled(True)
-        self.statusBar().showMessage(
-            str(self.treeWidget.topLevelItemCount()) + " Groups containing " + str(len(self.romDict)) + " games")
-        
+        self.showStatus()
+
     def loadList(self, listName):
         try:
             bkpFile = ''
@@ -1077,7 +1124,7 @@ class Ui_MainWindow(QMainWindow):
         ret = subprocess.run(
             ["e:\\mame\\mame64.exe", "-version"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        print(ret)
+        print('Found Mame version {}'.format(ret))
 
     def processRom(self, romname):
         ret = subprocess.run(
@@ -1251,26 +1298,38 @@ class Ui_MainWindow(QMainWindow):
 
     def setUncheckedHidden(self, hidden):
         try:
-            root = self.treeWidget.invisibleRootItem()
-            titleCount = root.childCount()
-            for idx in range(titleCount):
-                item = root.child(idx)
-                checked_cnt = 0
-                unchecked_cnt = 0
-                other_cnt = 0
-                for cIdx in range(item.childCount()):
-                    child = item.child(cIdx)
-                    if child.checkState(0) == QtCore.Qt.Unchecked:
-                        child.setHidden(hidden)
-                        unchecked_cnt += 1
-                    elif item.checkState(0) == QtCore.Qt.Checked:
-                        checked_cnt += 1
+            self.hideUncheckedOn = hidden
+            if self.searchOn and not hidden:
+                self.showSearchResults()
+            else:
+                root = self.treeWidget.invisibleRootItem()
+                titleCount = root.childCount()
+                for idx in range(titleCount):
+                    item = root.child(idx)
+                    checked_cnt = 0
+                    unchecked_cnt = 0
+                    other_cnt = 0
+                    for cIdx in range(item.childCount()):
+                        child = item.child(cIdx)
+                        if child.checkState(0) == QtCore.Qt.Unchecked:
+                            if hidden:
+                                child.setHidden(True)
+                            else:
+                                if not self.searchOn:
+                                    child.setHidden(False)
+                            unchecked_cnt += 1
+                        elif item.checkState(0) != QtCore.Qt.Unchecked:
+                            if not self.searchOn:
+                                child.setHidden(False)
+                            if not child.isHidden():
+                                checked_cnt += 1
+                        else:
+                            other_cnt += 1
+                    if hidden and checked_cnt == 0 and other_cnt == 0:
+                        item.setHidden(True)
                     else:
-                        other_cnt += 1
-                if hidden and checked_cnt == 0 and other_cnt == 0:
-                    item.setHidden(True)
-                else:
-                    item.setHidden(False)
+                        if not self.searchOn:
+                            item.setHidden(False)
 
         except Exception as e:
             traceback.print_exc()
@@ -1283,6 +1342,7 @@ class Ui_MainWindow(QMainWindow):
         else:
             self.setUncheckedHidden(False)
             self.failedBtn.setText('Hide Unchecked')
+        self.showStatus()
 
     def applyUncheckedHidden(self):
         if self.failedBtn.text() == 'Hide Unchecked':
@@ -1293,6 +1353,9 @@ class Ui_MainWindow(QMainWindow):
     def clearSearch(self):
         self.setTreeHidden(False)
         self.applyUncheckedHidden()
+        self.findField = ''
+        self.findText = ''
+        self.searchOn = False
 
 if __name__ == "__main__":
     import sys
