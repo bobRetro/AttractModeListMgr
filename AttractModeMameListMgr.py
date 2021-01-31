@@ -28,30 +28,14 @@ def getCfgLineKeyVal(line):
         return 0, None, None
 
 
-def getRomPath(fileToOpen):
-    if os.path.isfile(fileToOpen):
-        romPath = ""
-        with open(fileToOpen, "r") as fp:
-            line = fp.readline()
-            while line:
-                lvl, key, val = getCfgLineKeyVal(line)
-                if key == 'rompath':
-                    romPath = val
-                    break
-                line = fp.readline()
-        return romPath
-    else:
-        return "Invalid Path"
-
-
-def showErr(message):
+def showMsg(windowTitle, message):
     try:
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
 
         msg.setText(message)
 #            msg.setInformativeText("This is additional information")
-        msg.setWindowTitle("Error")
+        msg.setWindowTitle(windowTitle)
         msg.setStandardButtons(QMessageBox.Ok)
 #            msg.buttonClicked.connect(self.msgbtn)
 
@@ -154,7 +138,7 @@ def addFieldVal(field, val):
 class Ui_MainWindow(QMainWindow):
     dataChanged = False
     fileHeader = str()
-    romItem = recordtype('romItem', [('lstLine', ''), ('treeIdx', '-1'), ('excluded', 'N'), ('locked', 'N'), ('favorite', 'N')])
+    romItem = recordtype('romItem', [('lstLine', ''), ('treeIdx', '-1'), ('excluded', 'N'), ('locked', 'N'), ('favorite', 'N'), ('status', 'unknown')])
     romDict = dict()
     lineHeaderDict = dict()
     parentCloneofDict = dict()
@@ -171,7 +155,7 @@ class Ui_MainWindow(QMainWindow):
     configData = AmConfig()
     configfile = 'AttractModeMameListMgr.cfg'
     groupMode = 'parent'
-    romPath = ""
+    mameCfg = recordtype('mameCfg', [('rompath',''), ('workdir', '')])
     firstLoad = True
     treeLoading = False
     listName = "Mame"
@@ -367,6 +351,27 @@ class Ui_MainWindow(QMainWindow):
 
         self.loadAmConfigFile()
 
+    def loadMameCfg(self):
+        try:
+            fileToOpen = os.path.join(self.configData.amDir, "emulators\\Mame.cfg")
+            if not os.path.isfile(fileToOpen):
+                showMsg('Error', 'Unable to find {}, please fix and retry'.format(fileToOpen))
+                return
+
+            if os.path.isfile(fileToOpen):
+                with open(fileToOpen, "r") as fp:
+                    line = fp.readline()
+                    while line:
+                        lvl, key, val = getCfgLineKeyVal(line)
+                        if key == 'rompath':
+                            self.mameCfg.rompath = val
+                        if key == 'workdir':
+                            self.mameCfg.workdir = val
+                        line = fp.readline()
+        except Exception as e:
+            traceback.print_exc()
+            raise e
+
     def menuContextTree(self, point):
         try:
             index = self.treeWidget.indexAt(point)
@@ -384,6 +389,8 @@ class Ui_MainWindow(QMainWindow):
             self.setCheckedContextMenu(menu, point)
             menu.addSeparator()
             self.setFavoriteContextMenu(menu, point)
+            menu.addSeparator()
+            self.setValidateContextMenu(menu, point)
 
             menu.exec_(self.treeWidget.mapToGlobal(point))
         except Exception as e:
@@ -427,7 +434,7 @@ class Ui_MainWindow(QMainWindow):
                 if lvl == 0 and dispKey == 'display':
                     dispDict[dispVal], i = loadDisplayCfg(cfgList, i)
         else:
-            showErr(
+            showMsg('Error',
                 'Unable to find AttractMode config file.  Please go to preferences and select the AttractMode directory and ensure a config file exsts')
         return dispDict
 
@@ -534,7 +541,7 @@ class Ui_MainWindow(QMainWindow):
 
                 if column == self.col_status:
                     status = item.text(self.col_status)
-                    newLine = self.setLineStatus(newLine, status)
+                    self.romDict[romName].status = status
 
                 if column == self.col_name:
                     if item.checkState(0) == QtCore.Qt.Checked:
@@ -589,11 +596,13 @@ class Ui_MainWindow(QMainWindow):
         value_count = 0
         selected_items = self.treeWidget.selectedItems()
         for tree_item in selected_items:
+            rom_name = tree_item.text(self.col_rom)
             if tree_item.parent():
                 item_count += 1
-                if column_name == 'locked' and self.romDict[tree_item.text(self.col_rom)].locked == col_value or\
-                        column_name == 'favorite' and self.romDict[tree_item.text(self.col_rom)].favorite == col_value:
-                    value_count += 1
+                if (column_name == 'locked'   and self.romDict[rom_name].locked   == col_value or
+                    column_name == 'favorite' and self.romDict[rom_name].favorite == col_value or
+                    column_name == 'status'   and self.romDict[rom_name].status   == col_value):
+                        value_count += 1
         return item_count, value_count
 
     def lockItem(self, tree_item):
@@ -683,6 +692,74 @@ class Ui_MainWindow(QMainWindow):
             if favorite_count < item_count:
                 action = menu.addAction("Unlock"+name+" to favorites")
                 action.triggered.connect(functools.partial(self.setSelectedLockStatus, 'unfavorite'))
+
+    def validateSelected(self, status):
+        try:
+            if os.path.isdir(self.configData.amDir):
+                self.loadMameCfg()
+            else:
+                showMsg('Error', 'Invalid Attractmode directory, please fix and retry')
+                return
+
+            pass_count = 0
+            fail_count = 0
+            rom_name   = ''
+            message    = ''
+
+            selected_items = self.treeWidget.selectedItems()
+
+            d = QtWidgets.QDialog()
+            dui = ProgressDialog(parent=self, flags=Qt.Dialog)
+            dui.setupUi(d)
+            d.show()
+            dui.setProgressRange(1, len(selected_items))
+
+            for idx, tree_item in enumerate(selected_items):
+                if tree_item.parent():
+                    if (status == 'all'
+                        or status == 'passed' and tree_item.text(self.col_status) == 'pass'
+                        or status == 'failed' and tree_item.text(self.col_status) == 'fail'):
+                            rom_name = tree_item.text(self.col_rom)
+                            s = self.validateTreeItem(tree_item)
+                            if s == 'pass':
+                                pass_count += 1
+                            else:
+                                fail_count += 1
+                            app.processEvents()
+                            dui.setProgressValue(idx+1)
+
+            dui.setProgressValue(idx+1)
+            app.processEvents()
+            if pass_count + fail_count == 0:
+                msg = 'No Games selected to validate'
+            elif pass_count + fail_count == 1:
+                message = '{} {}ed'.format(rom_name, s)
+            else:
+                message = 'Validated {} roms: {} passed and {} failed'.format(pass_count + fail_count, pass_count,
+                                                                             fail_count)
+            showMsg('Validation Results', message)
+        except Exception as e:
+            traceback.print_exc()
+            raise e
+
+    def setValidateContextMenu(self, menu, point):
+        name = ""
+        item_count, fail_count = self.getSelectedColValueCount('status', 'fail')
+
+        if item_count > 0:
+            if item_count == 1:
+                name = " "+self.treeWidget.itemAt(point).text(self.col_name)
+
+            if fail_count == 0 or fail_count == item_count:
+                action = menu.addAction("Validate"+name)
+                action.triggered.connect(functools.partial(self.validateSelected, 'all'))
+            else:
+                action = menu.addAction("Validate failed")
+                action.triggered.connect(functools.partial(self.validateSelected, 'failed'))
+                action = menu.addAction("Validate passed")
+                action.triggered.connect(functools.partial(self.validateSelected, 'passed'))
+                action = menu.addAction("Validate all")
+                action.triggered.connect(functools.partial(self.validateSelected, 'all'))
 
     def setSelectedCheckStatus(self, status):
         selected_items = self.treeWidget.selectedItems()
@@ -807,16 +884,6 @@ class Ui_MainWindow(QMainWindow):
             print("Oops!", sys.exc_info()[0], "occurred.")
             raise e
 
-    def setLineStatus(self, line, status):
-        if status == '':
-            newLine = line
-        else:
-            if status == 'pass':
-                newLine = self.addRemoveLineFieldVal(line, 'Status', 'pass', 'fail')
-            else:
-                newLine = self.addRemoveLineFieldVal(line, 'Status', 'fail', 'pass')
-        return newLine
-
     def addRemoveLineFieldVal(self, line, field, addVal, remVal):
         newLine = ""
         colList = line.split(';')
@@ -837,13 +904,13 @@ class Ui_MainWindow(QMainWindow):
     def saveAlm(self):
         fileToOpen = os.path.join(self.configData.amDir, "romLists\\Mame.alm")
         with open(fileToOpen, "w") as of:
-            of.write('#Name,Excluded,Locked\n')
-            for romItem in sorted(self.romDict.values(), key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
+            of.write('#Name,Excluded,Locked,Status\n')
+            for romItem in sorted(self.romDict.values(),
+                                  key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
                 wordList = romItem.lstLine.strip('\n\r').split(';')
-                extra = wordList[self.lineHeaderDict['Extra']]
                 rom = wordList[self.lineHeaderDict['Name']]
-                extraList = extra.split(',')
-                if self.romDict[rom].locked == 'Y' or self.romDict[rom].excluded == 'Y':
+                if self.romDict[rom].locked == 'Y' or self.romDict[rom].excluded == 'Y' or\
+                        self.romDict[rom].status != '':
                     newLine = rom
                     if self.romDict[rom].excluded == 'Y':
                         newLine += ',Y'
@@ -853,6 +920,10 @@ class Ui_MainWindow(QMainWindow):
                         newLine += ',Y'
                     else:
                         newLine += ',N'
+                    if self.romDict[rom].status != '':
+                        newLine += ','+self.romDict[rom].status
+                    else:
+                        newLine += ',unknown'
                     of.write(newLine+'\n')
 
     def saveMame(self):
@@ -862,7 +933,7 @@ class Ui_MainWindow(QMainWindow):
                 with open(fileToOpen, "w") as of:
                     of.write(self.fileHeader)
                     for romItem in sorted(self.romDict.values(), key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
-                        line = self.removeLineFieldVal(romItem.lstLine, 'Extra', 'locked')
+                        line = self.removeLineFieldVal(romItem.lstLine, 'Status', 'pass')
                         of.write(line+'\n')
                 self.saveAlm()
                 self.dataChanged = False
@@ -981,7 +1052,9 @@ class Ui_MainWindow(QMainWindow):
                     wordlist = line.strip('\n\r').split(';')
                     cloneOf = wordlist[cloneofCol]
                     title = wordlist[titleCol]
-                    status = getStatus(wordlist[statusCol])
+#                    status = getStatus(wordlist[statusCol])
+#                    self.romDict[romname].status = status
+                    status = self.romDict[romname].status
                     extra = wordlist[extraCol]
                     newTitle, variation = getTitleVariation(title)
                     emu = wordlist[emuCol]
@@ -1101,8 +1174,9 @@ class Ui_MainWindow(QMainWindow):
                             if almFields[0] in self.romDict:
                                 self.romDict[almFields[0]].excluded = almFields[1]
                                 self.romDict[almFields[0]].locked = almFields[2]
+                                self.romDict[almFields[0]].status = almFields[3]
                             else:
-                                self.romDict[almFields[0]] = self.romItem(excluded=almFields[1], locked=almFields[2])
+                                self.romDict[almFields[0]] = self.romItem(excluded=almFields[1], locked=almFields[2], status=almFields[3])
                             line = fp.readline().strip('\n')
 
                 self.loadTree('parent')
@@ -1128,10 +1202,10 @@ class Ui_MainWindow(QMainWindow):
 
     def processRom(self, romname):
         ret = subprocess.run(
-            [self.configData.mameExe, romname, "-verifyroms", "-rompath", self.romPath],
+            [self.configData.mameExe, romname, "-verifyroms", "-rompath", self.mameCfg.rompath],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
 
-#        if ret.stdout != "":
+    #        if ret.stdout != "":
 #            linelist = list(enumerate(ret.stdout.split('\n')))
 #        else:
 #            linelist = list(enumerate(ret.stderr.split('\n')))
@@ -1144,6 +1218,22 @@ class Ui_MainWindow(QMainWindow):
 #        return ret.returncode, l
         return ret.returncode
 
+    def validateTreeItem(self, treeItem):
+        try:
+            rom_name = treeItem.text(self.col_rom)
+            return_code = self.processRom(rom_name)
+            if return_code != 0:
+                treeItem.setCheckState(0, Qt.Unchecked)
+                status = 'fail'
+            else:
+                status = 'pass'
+            treeItem.setText(self.col_status, status)
+            self.romDict[rom_name].status = status
+            return status
+
+        except Exception as e:
+            traceback.print_exc()
+            raise e
 #    def msgbtn(self, i):
 #        print("Button pressed is {}".format(i.text()))
 
@@ -1151,26 +1241,23 @@ class Ui_MainWindow(QMainWindow):
         pIdx = 0
         try:
             if not os.path.isfile(self.configData.mameExe):
-                showErr('Invalid Mame executable, please fix and retry')
+                showMsg('Error', 'Invalid Mame executable, please fix and retry')
                 return
+
             if os.path.isdir(self.configData.amDir):
-                fileToOpen = os.path.join(self.configData.amDir, "emulators\\Mame.cfg")
-                if not os.path.isfile(fileToOpen):
-                    showErr('Unable to find {}, please fix and retry'.format(fileToOpen))
-                    return
-                self.romPath = getRomPath(fileToOpen)
+                self.loadMameCfg()
             else:
-                showErr('Invalid Attractmode directory, please fix and retry')
+                showMsg('Error', 'Invalid Attractmode directory, please fix and retry')
                 return
-            
+
             root = self.treeWidget.invisibleRootItem()
             titleCount = root.childCount()
             if titleCount == 0:
-                showErr('No entries in list.  Please load Mame.txt before validating!')
+                showMsg('Error', 'No entries in list.  Please load Mame.txt before validating!')
                 return
-            d = QtWidgets.QDialog()
             self.treeWidget.expandAll()
             self.expColBtn.setText("Collapse")
+            d = QtWidgets.QDialog()
             dui = ProgressDialog(parent=self, flags=Qt.Dialog)
             dui.setupUi(d)
             d.show()
@@ -1186,14 +1273,7 @@ class Ui_MainWindow(QMainWindow):
                 for cIdx in range(item.childCount()):
                     pIdx += 1
                     child = item.child(cIdx)
-                    romname = child.text(self.col_rom)
-#                    return_code, statusMsg = self.processRom(romname)
-                    return_code = self.processRom(romname)
-                    if return_code != 0:
-                        child.setCheckState(0, Qt.Unchecked)
-                        child.setText(self.col_status, 'fail')
-                    else:
-                        child.setText(self.col_status, 'pass')
+                    status = self.validateTreeItem(child)
                 dui.setProgressValue(pIdx)
                 self.statusBar().showMessage("{0} / {1}".format(pIdx, romCount))
                 app.processEvents()
