@@ -1440,6 +1440,7 @@ class Ui_MainWindow(QMainWindow):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
+    app.setStyle('Fusion')
     MainWindow = Ui_MainWindow()
     MainWindow.setupUi(MainWindow)
     MainWindow.show()
