@@ -49,6 +49,7 @@ class Ui_findDlg(object):
         self.fieldComboBox.addItem('Name')
         self.fieldComboBox.addItem('Variation')
         self.fieldComboBox.addItem('Category')
+        self.fieldComboBox.addItem('Status')
         self.fieldLabel = QtWidgets.QLabel(findDlg)
         self.fieldLabel.setGeometry(QtCore.QRect(10, 13, 31, 16))
         self.fieldLabel.setObjectName("fieldLabel")

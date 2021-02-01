@@ -3,8 +3,10 @@ import subprocess
 import os.path
 import functools
 
-from PyQt5 import QtCore, QtGui, QtWidgets, Qt
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.Qt import *
+from PyQt5.QtWidgets import QTreeWidgetItem
+
 from ProgressDialog import ProgressDialog
 from ConfigDialog import Ui_configDialog
 from AmConfig import AmConfig
@@ -41,9 +43,9 @@ def showMsg(windowTitle, message):
 
         retval = msg.exec_()
         return retval
-    except Exception as e:
+    except Exception as msgException:
         traceback.print_exc()
-        raise e
+        raise msgException
 
 
 def getStatus(status):
@@ -75,31 +77,28 @@ def loadDisplayCfg(cfgList, listIdx):
 
     return cfgDict, len(cfgList)
 
+
 def getTitleVariation(title):
-    try:
-        var = ''
-        endIdx = -1
-        newBegIdx = -1
-        depth = 0
-        newTitle = title
-        for i in reversed(range(len(title))):
-            if title[i] == ')':
-                depth += 1
-                if endIdx == -1:
-                    endIdx = i
-            elif title[i] == '(':
-                depth -= 1
-                if depth == 0:
-                    if var != "":
-                        var = ' - ' + var.strip()
-                    var = title[i+1:endIdx] + var
-                    newBegIdx = i
-                    endIdx = -1
-        if newBegIdx > 0:
-            newTitle = title[0:newBegIdx-1].strip()
-    except Exception as e:
-        traceback.print_exc()
-        raise e
+    var = ''
+    endIdx = -1
+    newBegIdx = -1
+    depth = 0
+    newTitle = title
+    for i in reversed(range(len(title))):
+        if title[i] == ')':
+            depth += 1
+            if endIdx == -1:
+                endIdx = i
+        elif title[i] == '(':
+            depth -= 1
+            if depth == 0:
+                if var != "":
+                    var = ' - ' + var.strip()
+                var = title[i+1:endIdx] + var
+                newBegIdx = i
+                endIdx = -1
+    if newBegIdx > 0:
+        newTitle = title[0:newBegIdx-1].strip()
     return newTitle, var
 
 
@@ -138,10 +137,16 @@ def addFieldVal(field, val):
 class Ui_MainWindow(QMainWindow):
     dataChanged = False
     fileHeader = str()
-    romItem = recordtype('romItem', [('lstLine', ''), ('treeIdx', '-1'), ('excluded', 'N'), ('locked', 'N'), ('favorite', 'N'), ('status', 'unknown')])
+    romItem = recordtype('romItem',
+                         [('lstLine',  ''),
+                          ('treeIdx',  '-1'),
+                          ('excluded', 'N'),
+                          ('locked',   'N'),
+                          ('favorite', 'N'),
+                          ('status',   'unknown')])
     romDict = dict()
     lineHeaderDict = dict()
-    parentCloneofDict = dict()
+    parentCloneOfDict = dict()
     parentTitleDict = dict()
     dispDict = dict()
     emuDict = dict()
@@ -155,7 +160,7 @@ class Ui_MainWindow(QMainWindow):
     configData = AmConfig()
     configfile = 'AttractModeMameListMgr.cfg'
     groupMode = 'parent'
-    mameCfg = recordtype('mameCfg', [('rompath',''), ('workdir', '')])
+    mameCfg = recordtype('mameCfg', [('rompath', ''), ('workdir', '')])
     firstLoad = True
     treeLoading = False
     listName = "Mame"
@@ -271,7 +276,7 @@ class Ui_MainWindow(QMainWindow):
         self.configUi = Ui_configDialog(parent=self)
         self.configUi.setupUi(self.configDialog)
 
-    def setupUi(self, myMainWindow):
+    def setupUi(self):
         self._windowLayout()
         # Dictates the order of the columns
         self.column_headers = ['Name', 'Variation', 'Rom', 'CloneOf', 'Category', 'Status', 'Emulator', 'Favorite']
@@ -341,11 +346,7 @@ class Ui_MainWindow(QMainWindow):
         fileMenu.aboutToShow.connect(self.updateFileMenu)
 
         self.treeWidget.setSortingEnabled(True)
-        self.retranslateUi(MainWindow)
-
-        MainWindow.setWindowFlags(myMainWindow.windowFlags() |
-                                  QtCore.Qt.WindowMinimizeButtonHint |
-                                  QtCore.Qt.WindowMaximizeButtonHint)
+        self.retranslateUi()
 
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
@@ -373,29 +374,25 @@ class Ui_MainWindow(QMainWindow):
             raise e
 
     def menuContextTree(self, point):
-        try:
-            index = self.treeWidget.indexAt(point)
+        index = self.treeWidget.indexAt(point)
 
-            if not index.isValid():
-                return
+        if not index.isValid():
+            return
 
 #            item = self.treeWidget.itemAt(point)
 #            name = item.text(self.col_name)  # The text of the node.
 
-            # Context menu
-            menu = QtWidgets.QMenu()
-            self.setLockedContextMenu(menu, point)
-            menu.addSeparator()
-            self.setCheckedContextMenu(menu, point)
-            menu.addSeparator()
-            self.setFavoriteContextMenu(menu, point)
-            menu.addSeparator()
-            self.setValidateContextMenu(menu, point)
+        # Context menu
+        menu = QtWidgets.QMenu()
+        self.setLockedContextMenu(menu, point)
+        menu.addSeparator()
+        self.setCheckedContextMenu(menu, point)
+        menu.addSeparator()
+        self.setFavoriteContextMenu(menu, point)
+        menu.addSeparator()
+        self.setValidateContextMenu(menu, point)
 
-            menu.exec_(self.treeWidget.mapToGlobal(point))
-        except Exception as e:
-            traceback.print_exc()
-            raise e
+        menu.exec_(self.treeWidget.mapToGlobal(point))
 
     def addMenu(self, menuName, subMenuDict, connectAction):
         dispMenu = None
@@ -435,7 +432,8 @@ class Ui_MainWindow(QMainWindow):
                     dispDict[dispVal], i = loadDisplayCfg(cfgList, i)
         else:
             showMsg('Error',
-                'Unable to find AttractMode config file.  Please go to preferences and select the AttractMode directory and ensure a config file exsts')
+                    'Unable to find AttractMode config file.  Please go to preferences and select the AttractMode '
+                    'directory and ensure a config file exists')
         return dispDict
 
     def loadAmConfigFile(self):
@@ -444,35 +442,31 @@ class Ui_MainWindow(QMainWindow):
             self.configUi.amDir.setText(self.configData.amDir)
             self.configUi.mameExe.setText(self.configData.mameExe)
             self.dispDict = self.loadAmConfig(os.path.join(self.configData.amDir, "attract.cfg"))
-            self.addMenu('Display', self.dispDict, self.loadDisp)
+            self.addMenu('Display', self.dispDict, self.loadDisplay)
             if 'Mame' in self.dispDict:
                 self.loadList('Mame')
 
     def showPreferences(self):
-        try:
-            currAmDir = self.configUi.amDir.text()
-            currMameExe = self.configUi.mameExe.text()
+        currAmDir = self.configUi.amDir.text()
+        currMameExe = self.configUi.mameExe.text()
 
-            self.configDialog.show()
-            rsp = self.configDialog.exec_()
-            if rsp == QDialog.Accepted:
-                if self.configData.amDir != self.configUi.amDir.text():
-                    loadConfig = True
-                else:
-                    loadConfig = False
-                if (self.configData.amDir != self.configUi.amDir.text() or
-                        self.configData.mameExe != self.configUi.mameExe.text()):
-                    self.configData.amDir = self.configUi.amDir.text()
-                    self.configData.mameExe = self.configUi.mameExe.text()
-                    self.configData.saveJSON(self.configfile)
-                if loadConfig:
-                    self.loadAmConfigFile()
+        self.configDialog.show()
+        rsp = self.configDialog.exec_()
+        if rsp == QDialog.Accepted:
+            if self.configData.amDir != self.configUi.amDir.text():
+                loadConfig = True
             else:
-                self.configUi.amDir.setText(currAmDir)
-                self.configUi.mameExe.setText(currMameExe)
-        except Exception as e:
-            traceback.print_exc()
-            raise e
+                loadConfig = False
+            if (self.configData.amDir != self.configUi.amDir.text() or
+                    self.configData.mameExe != self.configUi.mameExe.text()):
+                self.configData.amDir = self.configUi.amDir.text()
+                self.configData.mameExe = self.configUi.mameExe.text()
+                self.configData.saveJSON(self.configfile)
+            if loadConfig:
+                self.loadAmConfigFile()
+        else:
+            self.configUi.amDir.setText(currAmDir)
+            self.configUi.mameExe.setText(currMameExe)
 
     def ignoreUnsavedChangesWarning(self):
         ignore = True
@@ -486,15 +480,11 @@ class Ui_MainWindow(QMainWindow):
                 ignore = False
         return ignore
 
-    def loadDisp(self):
-        try:
-            if self.ignoreUnsavedChangesWarning():
-                self.dataChanged = False
-                action = self.sender()
-                self.loadList(action.text())
-        except Exception as e:
-            traceback.print_exc()
-            raise e
+    def loadDisplay(self):
+        if self.ignoreUnsavedChangesWarning():
+            self.dataChanged = False
+            action = self.sender()
+            self.loadList(action.text())
 
     def closeProgram(self):
         self.close()
@@ -515,7 +505,7 @@ class Ui_MainWindow(QMainWindow):
 #        if e.key() == Qt.Key_Escape:
 #            self.close()
     
-    def retranslateUi(self, Dialog):
+    def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate(   "MainWindow", "Attract Mode List Manager"))
         self.cloneBtn.setText(_translate(       "MainWindow", "Unselect Clones"))
@@ -600,9 +590,9 @@ class Ui_MainWindow(QMainWindow):
             if tree_item.parent():
                 item_count += 1
                 if (column_name == 'locked'   and self.romDict[rom_name].locked   == col_value or
-                    column_name == 'favorite' and self.romDict[rom_name].favorite == col_value or
-                    column_name == 'status'   and self.romDict[rom_name].status   == col_value):
-                        value_count += 1
+                        column_name == 'favorite' and self.romDict[rom_name].favorite == col_value or
+                        column_name == 'status'   and self.romDict[rom_name].status   == col_value):
+                    value_count += 1
         return item_count, value_count
 
     def lockItem(self, tree_item):
@@ -694,53 +684,49 @@ class Ui_MainWindow(QMainWindow):
                 action.triggered.connect(functools.partial(self.setSelectedLockStatus, 'unfavorite'))
 
     def validateSelected(self, status):
-        try:
-            if os.path.isdir(self.configData.amDir):
-                self.loadMameCfg()
-            else:
-                showMsg('Error', 'Invalid Attractmode directory, please fix and retry')
-                return
+        if os.path.isdir(self.configData.amDir):
+            self.loadMameCfg()
+        else:
+            showMsg('Error', 'Invalid Attractmode directory, please fix and retry')
+            return
 
-            pass_count = 0
-            fail_count = 0
-            rom_name   = ''
-            message    = ''
+        pass_count = 0
+        fail_count = 0
+        rom_name   = ''
 
-            selected_items = self.treeWidget.selectedItems()
+        selected_items = self.treeWidget.selectedItems()
 
-            d = QtWidgets.QDialog()
-            dui = ProgressDialog(parent=self, flags=Qt.Dialog)
-            dui.setupUi(d)
-            d.show()
-            dui.setProgressRange(1, len(selected_items))
+        d = QtWidgets.QDialog()
+        dui = ProgressDialog(parent=self, flags=Qt.Dialog)
+        dui.setupUi(d)
+        d.show()
+        dui.setProgressRange(1, len(selected_items))
 
-            for idx, tree_item in enumerate(selected_items):
-                if tree_item.parent():
-                    if (status == 'all'
-                        or status == 'passed' and tree_item.text(self.col_status) == 'pass'
+        s = ''
+        for idx, tree_item in enumerate(selected_items):
+            if tree_item.parent():
+                if (status == 'all'
+                    or status == 'passed' and tree_item.text(self.col_status) == 'pass'
                         or status == 'failed' and tree_item.text(self.col_status) == 'fail'):
-                            rom_name = tree_item.text(self.col_rom)
-                            s = self.validateTreeItem(tree_item)
-                            if s == 'pass':
-                                pass_count += 1
-                            else:
-                                fail_count += 1
-                            app.processEvents()
-                            dui.setProgressValue(idx+1)
+                    rom_name = tree_item.text(self.col_rom)
+                    s = self.validateTreeItem(tree_item)
+                    if s == 'pass':
+                        pass_count += 1
+                    else:
+                        fail_count += 1
+                    app.processEvents()
+                    dui.setProgressValue(idx+1)
 
-            dui.setProgressValue(idx+1)
-            app.processEvents()
-            if pass_count + fail_count == 0:
-                msg = 'No Games selected to validate'
-            elif pass_count + fail_count == 1:
-                message = '{} {}ed'.format(rom_name, s)
-            else:
-                message = 'Validated {} roms: {} passed and {} failed'.format(pass_count + fail_count, pass_count,
-                                                                             fail_count)
-            showMsg('Validation Results', message)
-        except Exception as e:
-            traceback.print_exc()
-            raise e
+        dui.setProgressValue(len(selected_items))
+        app.processEvents()
+        if pass_count + fail_count == 0:
+            message = 'No Games selected to validate'
+        elif pass_count + fail_count == 1:
+            message = '{} {}ed'.format(rom_name, s)
+        else:
+            message = 'Validated {} roms: {} passed and {} failed'.format(pass_count + fail_count, pass_count,
+                                                                          fail_count)
+        showMsg('Validation Results', message)
 
     def setValidateContextMenu(self, menu, point):
         name = ""
@@ -858,31 +844,23 @@ class Ui_MainWindow(QMainWindow):
             raise e
             
     def openAmDirDialog(self):
-        try:
-            options = QFileDialog.Options()
-            options |= QFileDialog.DontUseNativeDialog
-            fileName = str(QFileDialog.getExistingDirectory())
-            if fileName:
-                self.amDir.setText(os.path.normpath(fileName))
-        except Exception as e:
-            print("Oops!", sys.exc_info()[0], "occurred.")
-            raise e
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName = str(QFileDialog.getExistingDirectory())
+        if fileName:
+            self.amDir.setText(os.path.normpath(fileName))
 
     def openMameExeDialog(self):
-        try:
-            options = QFileDialog.Options()
-            options |= QFileDialog.DontUseNativeDialog
-            dirName = os.path.dirname(os.path.realpath(self.configData.mameExe))
-            if os.path.isdir(dirName):
-                tempDir = dirName
-            else:
-                tempDir = 'c:\\'
-            fileName, _ = QFileDialog.getOpenFileName(self, 'Mame Exe', tempDir, "Exe files (*.exe)")
-            if os.path.isfile(fileName):
-                self.mameExe.setText(os.path.normpath(fileName))
-        except Exception as e:
-            print("Oops!", sys.exc_info()[0], "occurred.")
-            raise e
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        dirName = os.path.dirname(os.path.realpath(self.configData.mameExe))
+        if os.path.isdir(dirName):
+            tempDir = dirName
+        else:
+            tempDir = 'c:\\'
+        fileName, _ = QFileDialog.getOpenFileName(self, 'Mame Exe', tempDir, "Exe files (*.exe)")
+        if os.path.isfile(fileName):
+            self.mameExe.setText(os.path.normpath(fileName))
 
     def addRemoveLineFieldVal(self, line, field, addVal, remVal):
         newLine = ""
@@ -927,25 +905,20 @@ class Ui_MainWindow(QMainWindow):
                     of.write(newLine+'\n')
 
     def saveMame(self):
-        try:
-            if len(self.romDict) > 0:
-                fileToOpen = os.path.join(self.configData.amDir, "romlists\\Mame.txt")
-                with open(fileToOpen, "w") as of:
-                    of.write(self.fileHeader)
-                    for romItem in sorted(self.romDict.values(), key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
-                        line = self.removeLineFieldVal(romItem.lstLine, 'Status', 'pass')
-                        of.write(line+'\n')
-                self.saveAlm()
-                self.dataChanged = False
-                self.saveAct.setEnabled(False)
-            
-        except Exception as e:
-            traceback.print_exc()
-            raise e
+        if len(self.romDict) > 0:
+            fileToOpen = os.path.join(self.configData.amDir, "romlists\\Mame.txt")
+            with open(fileToOpen, "w") as of:
+                of.write(self.fileHeader)
+                for romItem in sorted(self.romDict.values(), key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
+                    line = self.removeLineFieldVal(romItem.lstLine, 'Status', 'pass')
+                    of.write(line+'\n')
+            self.saveAlm()
+            self.dataChanged = False
+            self.saveAct.setEnabled(False)
 
-    def addParent(self, treeItem, newTitle, romname, emu, category):
+    def addParent(self, newTitle, romname, emu, category):
         gameIdx = self.treeWidget.topLevelItemCount()
-        self.parentCloneofDict[romname] = gameIdx
+        self.parentCloneOfDict[romname] = gameIdx
         # if romname in self.romDict:
         #     self.romDict[romname].treeIdx = gameIdx
         # else:
@@ -1024,7 +997,7 @@ class Ui_MainWindow(QMainWindow):
         app.processEvents()
         
         self.treeWidget.setSortingEnabled(False)
-        self.parentCloneofDict.clear()
+        self.parentCloneOfDict.clear()
         self.parentTitleDict.clear()
 
         titleCol = self.lineHeaderDict['Title']
@@ -1063,17 +1036,17 @@ class Ui_MainWindow(QMainWindow):
                     if mode == 'parent':
                         if level == 'parent':
                             if cloneOf == "":
-                                treeItem = self.addParent(self.treeWidget, newTitle, romname, emu, category)
+                                treeItem = self.addParent(newTitle, romname, emu, category)
                                 self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
                         else:
                             try:
                                 if cloneOf != "":
-                                    if cloneOf in self.parentCloneofDict.keys():
-                                        gameIdx = self.parentCloneofDict[cloneOf]
+                                    if cloneOf in self.parentCloneOfDict.keys():
+                                        gameIdx = self.parentCloneOfDict[cloneOf]
                                         treeItem = self.treeWidget.topLevelItem(gameIdx)
                                     else:
                                         # Parent ROM not found, create dummy parent using cloneOf value
-                                        treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf, emu, category)
+                                        treeItem = self.addParent(cloneOf, cloneOf, emu, category)
                                     self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra,
                                                   category)
                                 # if cloneOf != "":
@@ -1082,7 +1055,7 @@ class Ui_MainWindow(QMainWindow):
                                 #         treeItem = self.treeWidget.topLevelItem(gameIdx)
                                 #     else:
                                 #         # Parent ROM not found, create dummy parent using cloneOf value
-                                #         treeItem = self.addParent(self.treeWidget, cloneOf, cloneOf, emu, category)
+                                #         treeItem = self.addParent(cloneOf, cloneOf, emu, category)
                                 #     self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
                             except Exception as e:
                                 print("failed "+romname)
@@ -1092,7 +1065,7 @@ class Ui_MainWindow(QMainWindow):
                     elif mode == 'title':
                         if level == 'parent':
                             if newTitle not in self.parentTitleDict:
-                                self.addParent(self.treeWidget, newTitle, romname, emu, category)
+                                self.addParent(newTitle, romname, emu, category)
                         else:
                             gameIdx = self.parentTitleDict[newTitle]
                             treeItem = self.treeWidget.topLevelItem(gameIdx)
@@ -1117,7 +1090,7 @@ class Ui_MainWindow(QMainWindow):
                 self.dataChanged = False
                 self.treeWidget.clear()
                 self.romDict.clear()
-                self.parentCloneofDict.clear()
+                self.parentCloneOfDict.clear()
                 self.lineHeaderDict.clear()
 
                 self.treeWidget.setSortingEnabled(False)
@@ -1142,7 +1115,7 @@ class Ui_MainWindow(QMainWindow):
                         if emuname not in self.emuDict.keys():
                             self.emuDict[emuname] = 'None'
                         line = fp.readline()
-                    self.addMenu('Emulator', self.emuDict, self.loadDisp)
+                    self.addMenu('Emulator', self.emuDict, self.loadDisplay)
 
                 if self.firstLoad:
                     bkpFile = os.path.join(fileToOpen+".bkp")
@@ -1369,7 +1342,7 @@ class Ui_MainWindow(QMainWindow):
                         for cIdx in range(item.childCount()):
                             child = item.child(cIdx)
                             if (child.checkState(0) == QtCore.Qt.Checked
-                                    and child.text(self.col_cloneof) == parentRom and self.romDict[tree_item.text(self.col_rom)].locked == 'N'):
+                                    and child.text(self.col_cloneof) == parentRom and self.romDict[child.text(self.col_rom)].locked == 'N'):
                                 child.setCheckState(0, Qt.Unchecked)
 #            self.findDuplicates()
         except Exception as e:
@@ -1440,9 +1413,9 @@ class Ui_MainWindow(QMainWindow):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    app.setStyle('Fusion')
+    app.setStyle('Breeze')
     MainWindow = Ui_MainWindow()
-    MainWindow.setupUi(MainWindow)
+    MainWindow.setupUi()
     MainWindow.show()
     try:
         sys.exit(app.exec_())
