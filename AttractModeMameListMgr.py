@@ -48,15 +48,6 @@ def showMsg(windowTitle, message):
         raise msgException
 
 
-def getStatus(status):
-    statusList = status.split(',')
-    status = ''
-    for s in statusList:
-        if s == 'pass' or s == 'fail':
-            status = s
-    return status
-
-
 def loadDisplayCfg(cfgList, listIdx):
     cfgDict = dict()
     cfgDict['filter'] = dict()
@@ -133,12 +124,17 @@ def addFieldVal(field, val):
         newField = addDelimitedItem(newField, val, ",")
     return newField
 
+# class AlignDelegate(QtWidgets.QStyledItemDelegate):
+#     def initStyleOption(self, option, index):
+#         super(AlignDelegate, self).initStyleOption(option, index)
+#         option.displayAlignment = QtCore.Qt.AlignCenter
 
 class Ui_MainWindow(QMainWindow):
     dataChanged = False
     fileHeader = str()
     romItem = recordtype('romItem',
-                         [('lstLine',  ''),
+                         [('title',    ''),
+                          ('lstLine',  ''),
                           ('treeIdx',  '-1'),
                           ('excluded', 'N'),
                           ('locked',   'N'),
@@ -155,6 +151,7 @@ class Ui_MainWindow(QMainWindow):
     findText = ''
     findField = ''
     hideUncheckedOn = False
+    dispLoaded = ''
 
     favList = list()
     configData = AmConfig()
@@ -267,6 +264,8 @@ class Ui_MainWindow(QMainWindow):
         self.lockIcon = QtGui.QIcon("lock.ico")
         self.unlockIcon = QtGui.QIcon("unlock.ico")
         self.starIcon = QtGui.QIcon("star.ico")
+        self.passIcon = QtGui.QIcon("Iconsmind-Outline-Yes.ico")
+        self.failIcon = QtGui.QIcon("error.ico")
         self.blankIcon = QtGui.QIcon()
         self.findDlg = QtWidgets.QDialog()
         self.findUi = Ui_findDlg(parent=self)
@@ -290,6 +289,9 @@ class Ui_MainWindow(QMainWindow):
         self.col_status         = self.column_headers.index('Status')
         self.col_emulator       = self.column_headers.index('Emulator')
         self.col_favorite       = self.column_headers.index('Favorite')
+
+#        delegate = AlignDelegate(self.treeWidget)
+#        self.treeWidget.setItemDelegateForColumn(0, delegate)
 
         self.startBtn.clicked.connect(self.processList)
         self.cloneBtn.clicked.connect(self.unselectClones)
@@ -324,7 +326,7 @@ class Ui_MainWindow(QMainWindow):
         self.saveAct = QAction(icon, 'Save', self)
         self.saveAct.setShortcut('Ctrl+S')
         self.saveAct.setStatusTip('Save File')
-        self.saveAct.triggered.connect(self.saveMame)
+        self.saveAct.triggered.connect(self.saveList)
         self.saveAct.setEnabled(False)
 
         findAct = QAction(icon, 'Find', self)
@@ -345,12 +347,41 @@ class Ui_MainWindow(QMainWindow):
         fileMenu.addAction(exitAct)
         fileMenu.aboutToShow.connect(self.updateFileMenu)
 
+        selFailedAct = QAction(icon, 'Select Failed', self)
+        selFailedAct.setShortcut('Ctrl+B')
+        selFailedAct.setStatusTip('Select Failed')
+        selFailedAct.triggered.connect(lambda: self.selectByStatus('fail'))
+
+        selPassedAct = QAction(icon, 'Select Passed', self)
+        selPassedAct.setShortcut('Ctrl+G')
+        selPassedAct.setStatusTip('Select Passed')
+        selPassedAct.triggered.connect(lambda: self.selectByStatus('pass'))
+
+        editMenu = menubar.addMenu('&Edit')
+        editMenu.addAction(selFailedAct)
+        editMenu.addAction(selPassedAct)
+
         self.treeWidget.setSortingEnabled(True)
         self.retranslateUi()
 
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
         self.loadAmConfigFile()
+
+    def selectByStatus(self, status):
+        self.treeWidget.setFocus()
+        root = self.treeWidget.invisibleRootItem()
+        titleCount = root.childCount()
+        for idx in range(titleCount):
+            item = root.child(idx)
+            if not item.isHidden():
+                for cIdx in range(item.childCount()):
+                    child = item.child(cIdx)
+                    if not child.isHidden():
+                        if self.romDict[child.text(self.col_rom)].status == status:
+                            child.setSelected(True)
+                        else:
+                            child.setSelected(False)
 
     def loadMameCfg(self):
         try:
@@ -529,9 +560,9 @@ class Ui_MainWindow(QMainWindow):
                 romName = item.text(self.col_rom)
                 newLine = self.romDict[romName].lstLine
 
-                if column == self.col_status:
-                    status = item.text(self.col_status)
-                    self.romDict[romName].status = status
+#                if column == self.col_status:
+#                    status = item.text(self.col_status)
+#                    self.romDict[romName].status = status
 
                 if column == self.col_name:
                     if item.checkState(0) == QtCore.Qt.Checked:
@@ -640,14 +671,20 @@ class Ui_MainWindow(QMainWindow):
                 action.triggered.connect(functools.partial(self.setSelectedLockStatus, 'unlock'))
 
     def favoriteItem(self, tree_item):
-        if tree_item.parent() and self.romDict[tree_item.text(self.col_rom)].locked == 'N':
+        rom_name = tree_item.text(self.col_rom)
+        if tree_item.parent() and self.romDict[rom_name].locked == 'N':
             tree_item.setIcon(self.col_favorite, self.starIcon)
-            self.romDict[tree_item.text(self.col_rom)].favorite = 'Y'
+            self.romDict[rom_name].favorite = 'Y'
+            if rom_name not in self.favList:
+                self.favList.append(rom_name)
 
     def unfavoriteItem(self, tree_item):
-        if tree_item.parent() and self.romDict[tree_item.text(self.col_rom)].locked == 'N':
+        rom_name = tree_item.text(self.col_rom)
+        if tree_item.parent() and self.romDict[rom_name].locked == 'N':
             tree_item.setIcon(self.col_favorite, self.blankIcon)
-            self.romDict[tree_item.text(self.col_rom)].favorite = 'N'
+            self.romDict[rom_name].favorite = 'N'
+            if rom_name in self.favList:
+                self.favList.remove(rom_name)
 
     def setSelectedFavoriteStatus(self, status):
         selected_items = self.treeWidget.selectedItems()
@@ -680,8 +717,8 @@ class Ui_MainWindow(QMainWindow):
                 action.triggered.connect(functools.partial(self.setSelectedFavoriteStatus, 'favorite'))
 
             if favorite_count < item_count:
-                action = menu.addAction("Unlock"+name+" to favorites")
-                action.triggered.connect(functools.partial(self.setSelectedLockStatus, 'unfavorite'))
+                action = menu.addAction("Remove "+name+" from favorites")
+                action.triggered.connect(functools.partial(self.setSelectedFavoriteStatus, 'unfavorite'))
 
     def validateSelected(self, status):
         if os.path.isdir(self.configData.amDir):
@@ -705,9 +742,9 @@ class Ui_MainWindow(QMainWindow):
         s = ''
         for idx, tree_item in enumerate(selected_items):
             if tree_item.parent():
-                if (status == 'all'
-                    or status == 'passed' and tree_item.text(self.col_status) == 'pass'
-                        or status == 'failed' and tree_item.text(self.col_status) == 'fail'):
+                if (status == 'selected'
+                    or status == 'passed' and self.romDict[tree_item.text(self.col_rom)].status == 'pass'
+                        or status == 'failed' and self.romDict[tree_item.text(self.col_rom)].status == 'fail'):
                     rom_name = tree_item.text(self.col_rom)
                     s = self.validateTreeItem(tree_item)
                     if s == 'pass':
@@ -738,14 +775,14 @@ class Ui_MainWindow(QMainWindow):
 
             if fail_count == 0 or fail_count == item_count:
                 action = menu.addAction("Validate"+name)
-                action.triggered.connect(functools.partial(self.validateSelected, 'all'))
+                action.triggered.connect(functools.partial(self.validateSelected, 'selected'))
             else:
                 action = menu.addAction("Validate failed")
                 action.triggered.connect(functools.partial(self.validateSelected, 'failed'))
                 action = menu.addAction("Validate passed")
                 action.triggered.connect(functools.partial(self.validateSelected, 'passed'))
-                action = menu.addAction("Validate all")
-                action.triggered.connect(functools.partial(self.validateSelected, 'all'))
+                action = menu.addAction("Validate selected")
+                action.triggered.connect(functools.partial(self.validateSelected, 'selected'))
 
     def setSelectedCheckStatus(self, status):
         selected_items = self.treeWidget.selectedItems()
@@ -879,42 +916,62 @@ class Ui_MainWindow(QMainWindow):
     def removeLineFieldVal(self, line, field, fieldVal):
         return self.addRemoveLineFieldVal(line, field, '', fieldVal)
 
-    def saveAlm(self):
-        fileToOpen = os.path.join(self.configData.amDir, "romLists\\Mame.alm")
-        with open(fileToOpen, "w") as of:
-            of.write('#Name,Excluded,Locked,Status\n')
-            for romItem in sorted(self.romDict.values(),
-                                  key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
-                wordList = romItem.lstLine.strip('\n\r').split(';')
-                rom = wordList[self.lineHeaderDict['Name']]
-                if self.romDict[rom].locked == 'Y' or self.romDict[rom].excluded == 'Y' or\
-                        self.romDict[rom].status != '':
-                    newLine = rom
-                    if self.romDict[rom].excluded == 'Y':
-                        newLine += ',Y'
-                    else:
-                        newLine += ',N'
-                    if self.romDict[rom].locked == 'Y':
-                        newLine += ',Y'
-                    else:
-                        newLine += ',N'
-                    if self.romDict[rom].status != '':
-                        newLine += ','+self.romDict[rom].status
-                    else:
-                        newLine += ',unknown'
-                    of.write(newLine+'\n')
+    def saveTag(self):
+        try:
+            if self.dispLoaded != '' and len(self.romDict) > 0:
+                fileToOpen = os.path.join(self.configData.amDir, "romlists\\"+self.dispLoaded+".tag")
+                with open(fileToOpen, "w") as of:
+                    for romItem in sorted(self.romDict.values(), key=lambda kv: kv.title):
+                        if romItem.favorite == 'Y':
+                            wordList = romItem.lstLine.strip('\n\r').split(';')
+                            rom_name = wordList[self.lineHeaderDict['Name']]
+                            of.write(rom_name+'\n')
+        except Exception as e:
+            traceback.print_exc()
+            raise e
 
-    def saveMame(self):
-        if len(self.romDict) > 0:
-            fileToOpen = os.path.join(self.configData.amDir, "romlists\\Mame.txt")
+    def saveAlm(self):
+        if self.dispLoaded != '' and len(self.romDict) > 0:
+            fileToOpen = os.path.join(self.configData.amDir, "romLists\\"+self.dispLoaded+".alm")
             with open(fileToOpen, "w") as of:
-                of.write(self.fileHeader)
-                for romItem in sorted(self.romDict.values(), key=lambda kv: kv.lstLine.split(';')[self.lineHeaderDict['Title']]):
-                    line = self.removeLineFieldVal(romItem.lstLine, 'Status', 'pass')
-                    of.write(line+'\n')
-            self.saveAlm()
-            self.dataChanged = False
-            self.saveAct.setEnabled(False)
+                of.write('#Name;Excluded;Locked;Status\n')
+                for romItem in sorted(self.romDict.values(), key=lambda kv: kv.title):
+                    if romItem.lstLine == '':
+                        continue
+                    wordList = romItem.lstLine.strip('\n\r').split(';')
+                    rom = wordList[self.lineHeaderDict['Name']]
+                    if self.romDict[rom].locked == 'Y' or self.romDict[rom].excluded == 'Y' or\
+                            self.romDict[rom].status != '':
+                        newLine = rom
+                        if self.romDict[rom].excluded == 'Y':
+                            newLine += ';Y'
+                        else:
+                            newLine += ';N'
+                        if self.romDict[rom].locked == 'Y':
+                            newLine += ';Y'
+                        else:
+                            newLine += ';N'
+                        if self.romDict[rom].status != '':
+                            newLine += ';'+self.romDict[rom].status
+                        else:
+                            newLine += ';unknown'
+                        of.write(newLine+'\n')
+
+    def saveList(self):
+        try:
+            if self.dispLoaded != '' and len(self.romDict) > 0:
+                fileToOpen = os.path.join(self.configData.amDir, "romlists\\"+self.dispLoaded+".txt")
+                with open(fileToOpen, "w") as of:
+                    of.write(self.fileHeader)
+                    for romItem in sorted(self.romDict.values(), key=lambda kv: kv.title):
+                        of.write(romItem.lstLine+'\n')
+                self.saveAlm()
+                self.saveTag()
+                self.dataChanged = False
+                self.saveAct.setEnabled(False)
+        except Exception as e:
+            traceback.print_exc()
+            raise e
 
     def addParent(self, newTitle, romname, emu, category):
         gameIdx = self.treeWidget.topLevelItemCount()
@@ -947,7 +1004,11 @@ class Ui_MainWindow(QMainWindow):
         childItem.setText(self.col_variation,   variation)
         childItem.setText(self.col_rom,         romname)
         childItem.setText(self.col_cloneof,     cloneOf)
-        childItem.setText(self.col_status,      status)
+#        childItem.setText(self.col_status,      status)
+        if status == 'pass':
+            childItem.setIcon(self.col_status, self.passIcon)
+        else:
+            childItem.setIcon(self.col_status, self.failIcon)
 
         if romname in self.favList:
             childItem.setIcon(self.col_favorite, self.starIcon)
@@ -1019,14 +1080,14 @@ class Ui_MainWindow(QMainWindow):
         for level in ('parent', 'child'):
             for romname, romItem in self.romDict.items():
                 line = romItem.lstLine
+                if line.strip() == '':
+                    continue
                 try:
                     if dui.isCancelled():
                         break
                     wordlist = line.strip('\n\r').split(';')
                     cloneOf = wordlist[cloneofCol]
                     title = wordlist[titleCol]
-#                    status = getStatus(wordlist[statusCol])
-#                    self.romDict[romname].status = status
                     status = self.romDict[romname].status
                     extra = wordlist[extraCol]
                     newTitle, variation = getTitleVariation(title)
@@ -1083,7 +1144,7 @@ class Ui_MainWindow(QMainWindow):
 
     def loadList(self, listName):
         try:
-            bkpFile = ''
+            self.dispLoaded = listName
 
             fileToOpen = os.path.join(self.configData.amDir, "romlists\\" + listName + ".txt")
             if os.path.exists(fileToOpen):
@@ -1108,14 +1169,19 @@ class Ui_MainWindow(QMainWindow):
                     self.emuDict.clear()
                     line = fp.readline()
                     while line:
+                        if line.strip() == '':
+                            line = fp.readline()
+                            continue
                         wordlist = line.strip('\n\r').split(';')
                         romname = wordlist[self.lineHeaderDict['Name']]
                         emuname = wordlist[self.lineHeaderDict['Emulator']]
+                        gameTitle   = wordlist[self.lineHeaderDict['Title']]
                         self.romDict[romname] = self.romItem(lstLine=line.strip('\n'))
+                        self.romDict[romname].title = gameTitle
                         if emuname not in self.emuDict.keys():
                             self.emuDict[emuname] = 'None'
                         line = fp.readline()
-                    self.addMenu('Emulator', self.emuDict, self.loadDisplay)
+#                    self.addMenu('Emulator', self.emuDict, self.loadDisplay)
 
                 if self.firstLoad:
                     bkpFile = os.path.join(fileToOpen+".bkp")
@@ -1123,7 +1189,6 @@ class Ui_MainWindow(QMainWindow):
                         of.write(self.fileHeader)
                         for romItem in self.romDict.values():
                             of.write(romItem.lstLine+'\n')
-                    self.firstLoad = False
 
                 fileToOpen = os.path.join(self.configData.amDir, "romlists\\" + listName + ".tag")
                 if os.path.exists(fileToOpen):
@@ -1134,6 +1199,14 @@ class Ui_MainWindow(QMainWindow):
                             self.favList.append(fav_rom)
                             line = fp.readline()
 
+                if self.firstLoad:
+                    bkpFile = os.path.join(fileToOpen+".bkp")
+                    with open(bkpFile, "w") as of:
+                        for fav_rom in self.favList:
+                            of.write(fav_rom+'\n')
+
+                self.firstLoad = False
+
                 fileToOpen = os.path.join(self.configData.amDir, "romlists\\" + listName + ".alm")
 
                 if os.path.exists(fileToOpen):
@@ -1143,7 +1216,7 @@ class Ui_MainWindow(QMainWindow):
                         line = fp.readline().strip('\n')
                         line = fp.readline().strip('\n')
                         while line:
-                            almFields = line.split(',')
+                            almFields = line.split(';')
                             if almFields[0] in self.romDict:
                                 self.romDict[almFields[0]].excluded = almFields[1]
                                 self.romDict[almFields[0]].locked = almFields[2]
@@ -1160,6 +1233,7 @@ class Ui_MainWindow(QMainWindow):
                 self.treeWidget.sortByColumn(self.col_name, Qt.AscendingOrder)
                 self.treeWidget.sortByColumn(self.col_cloneof, Qt.AscendingOrder)
                 self.treeWidget.resizeColumnToContents(self.col_name)
+                self.treeWidget.resizeColumnToContents(self.col_status)
                 self.treeWidget.expandAll()
                 self.expColBtn.setText("Collapse")
 
@@ -1198,9 +1272,12 @@ class Ui_MainWindow(QMainWindow):
             if return_code != 0:
                 treeItem.setCheckState(0, Qt.Unchecked)
                 status = 'fail'
+                treeItem.setIcon(self.col_status, self.failIcon)
             else:
                 status = 'pass'
-            treeItem.setText(self.col_status, status)
+                treeItem.setIcon(self.col_status, self.passIcon)
+
+#            treeItem.setText(self.col_status, status)
             self.romDict[rom_name].status = status
             return status
 
@@ -1279,7 +1356,7 @@ class Ui_MainWindow(QMainWindow):
                     else:
                         item.setText(self.col_variation, variation)
                         item.setText(self.col_rom, romname)
-                        item.setText(self.col_status, 'pass')
+#                        item.setText(self.col_status, 'pass')
                         
                     for cIdx in range(item.childCount()):
                         child = item.child(cIdx)
@@ -1413,7 +1490,7 @@ class Ui_MainWindow(QMainWindow):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    app.setStyle('Breeze')
+    app.setStyle('Fusion')
     MainWindow = Ui_MainWindow()
     MainWindow.setupUi()
     MainWindow.show()

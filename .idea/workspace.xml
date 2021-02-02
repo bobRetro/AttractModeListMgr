@@ -2,10 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="692904ea-1415-41f5-8bc8-6bf9a1a553bc" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AttractModeMameListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeMameListMgr.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FindDialog.py" beforeDir="false" afterPath="$PROJECT_DIR$/FindDialog.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Lock_old.ico" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/AttractModeMameListMgr.exe" beforeDir="false" afterPath="$PROJECT_DIR$/dist/AttractModeMameListMgr.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/library.zip" beforeDir="false" afterPath="$PROJECT_DIR$/dist/library.zip" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
