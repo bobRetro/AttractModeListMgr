@@ -9,9 +9,17 @@
 import os
 import sys
 import traceback
+import subprocess
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QDialog
+
+
+def getMameVersion(mamePath):
+    ret = subprocess.run(
+        [mamePath, "-version"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+    print('Found Mame version {}'.format(ret))
 
 
 class Ui_configDialog(QDialog):

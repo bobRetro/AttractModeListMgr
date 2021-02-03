@@ -129,6 +129,14 @@ def addFieldVal(field, val):
 #         super(AlignDelegate, self).initStyleOption(option, index)
 #         option.displayAlignment = QtCore.Qt.AlignCenter
 
+
+def getMameVersion(mamePath):
+    ret = subprocess.run(
+        [mamePath, "-version"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+    return str(ret.stdout)
+
+
 class Ui_MainWindow(QMainWindow):
     dataChanged = False
     fileHeader = str()
@@ -151,13 +159,14 @@ class Ui_MainWindow(QMainWindow):
     findText = ''
     findField = ''
     hideUncheckedOn = False
-    dispLoaded = ''
+    currentDisplay = ''
 
     favList = list()
     configData = AmConfig()
     configfile = 'AttractModeMameListMgr.cfg'
     groupMode = 'parent'
-    mameCfg = recordtype('mameCfg', [('rompath', ''), ('workdir', '')])
+    mameCfg = recordtype('mameCfg', [('rompath', ''), ('workdir', ''), ('executable', '')])
+
     firstLoad = True
     treeLoading = False
     listName = "Mame"
@@ -176,9 +185,42 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy.setHeightForWidth(self.cloneBtn.sizePolicy().hasHeightForWidth())
         self.cloneBtn.setSizePolicy(sizePolicy)
         self.cloneBtn.setObjectName("cloneBtn")
-        self.gridLayout.addWidget(self.cloneBtn, 1, 4, 1, 1)
+        self.gridLayout.addWidget(self.cloneBtn, 1, 5, 1, 1)
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.gridLayout.addItem(spacerItem, 1, 10, 1, 1)
+        self.treeWidget = QtWidgets.QTreeWidget(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(2)
+        sizePolicy.setHeightForWidth(self.treeWidget.sizePolicy().hasHeightForWidth())
+        self.treeWidget.setSizePolicy(sizePolicy)
+        self.treeWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.treeWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.treeWidget.setColumnCount(4)
+        self.treeWidget.setObjectName("treeWidget")
+        self.treeWidget.headerItem().setText(0, "1")
+        self.treeWidget.headerItem().setText(1, "2")
+        self.treeWidget.headerItem().setText(2, "3")
+        self.treeWidget.headerItem().setText(3, "4")
+        self.gridLayout.addWidget(self.treeWidget, 4, 0, 1, 12)
+        self.clearSearchBtn = QtWidgets.QPushButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.clearSearchBtn.sizePolicy().hasHeightForWidth())
+        self.clearSearchBtn.setSizePolicy(sizePolicy)
+        self.clearSearchBtn.setObjectName("clearSearchBtn")
+        self.gridLayout.addWidget(self.clearSearchBtn, 1, 11, 1, 1)
+        self.expColBtn = QtWidgets.QPushButton(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.expColBtn.sizePolicy().hasHeightForWidth())
+        self.expColBtn.setSizePolicy(sizePolicy)
+        self.expColBtn.setObjectName("expColBtn")
+        self.gridLayout.addWidget(self.expColBtn, 1, 3, 1, 1)
         self.frame = QtWidgets.QFrame(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
@@ -200,61 +242,20 @@ class Ui_MainWindow(QMainWindow):
         self.titleBtn.setGeometry(QtCore.QRect(180, 6, 44, 17))
         self.titleBtn.setObjectName("titleBtn")
         self.gridLayout.addWidget(self.frame, 0, 1, 2, 2)
+        self.uncheckedBtn = QtWidgets.QPushButton(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout.addItem(spacerItem, 1, 8, 1, 1)
-        self.startBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.startBtn.sizePolicy().hasHeightForWidth())
-        self.startBtn.setSizePolicy(sizePolicy)
-        self.startBtn.setObjectName("startBtn")
-        self.gridLayout.addWidget(self.startBtn, 1, 9, 1, 1)
-        self.treeWidget = QtWidgets.QTreeWidget(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(2)
-        sizePolicy.setHeightForWidth(self.treeWidget.sizePolicy().hasHeightForWidth())
-        self.treeWidget.setSizePolicy(sizePolicy)
-        self.treeWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.treeWidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        self.treeWidget.setColumnCount(4)
-        self.treeWidget.setObjectName("treeWidget")
-        self.treeWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.treeWidget.customContextMenuRequested.connect(self.menuContextTree)
-
-        self.gridLayout.addWidget(self.treeWidget, 3, 0, 1, 10)
-        self.clearSearchBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.clearSearchBtn.sizePolicy().hasHeightForWidth())
-        self.clearSearchBtn.setSizePolicy(sizePolicy)
-        self.clearSearchBtn.setObjectName("clearSearchBtn")
-        self.gridLayout.addWidget(self.clearSearchBtn, 1, 6, 1, 1)
-        self.expColBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.expColBtn.sizePolicy().hasHeightForWidth())
-        self.expColBtn.setSizePolicy(sizePolicy)
-        self.expColBtn.setObjectName("expColBtn")
-        self.gridLayout.addWidget(self.expColBtn, 1, 3, 1, 1)
-        self.failedBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.failedBtn.sizePolicy().hasHeightForWidth())
-        self.failedBtn.setSizePolicy(sizePolicy)
-        self.failedBtn.setObjectName("failedBtn")
-        self.gridLayout.addWidget(self.failedBtn, 1, 7, 1, 1)
-
+        sizePolicy.setHeightForWidth(self.uncheckedBtn.sizePolicy().hasHeightForWidth())
+        self.uncheckedBtn.setSizePolicy(sizePolicy)
+        self.uncheckedBtn.setObjectName("uncheckedBtn")
+        self.gridLayout.addWidget(self.uncheckedBtn, 1, 4, 1, 1)
+        self.findDupButton = QtWidgets.QPushButton(self.centralwidget)
+        self.findDupButton.setObjectName("findDupButton")
+        self.gridLayout.addWidget(self.findDupButton, 1, 6, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 906, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 906, 21))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -293,7 +294,6 @@ class Ui_MainWindow(QMainWindow):
 #        delegate = AlignDelegate(self.treeWidget)
 #        self.treeWidget.setItemDelegateForColumn(0, delegate)
 
-        self.startBtn.clicked.connect(self.processList)
         self.cloneBtn.clicked.connect(self.unselectClones)
         self.expColBtn.clicked.connect(self.expColTree)
         self.parentBtn.setChecked(True)
@@ -301,7 +301,8 @@ class Ui_MainWindow(QMainWindow):
         self.parentBtn.toggled.connect(self.toggleParentMode)
         self.titleBtn.toggled.connect(self.toggleParentMode)
         self.clearSearchBtn.clicked.connect(self.clearSearch)
-        self.failedBtn.clicked.connect(self.toggleUncheckedHidden)
+        self.uncheckedBtn.clicked.connect(self.toggleUncheckedHidden)
+        self.findDupButton.clicked.connect(self.findDuplicates)
 
         self.treeWidget.itemChanged[QTreeWidgetItem, int].connect(self.treeItemChanged)
 
@@ -399,10 +400,12 @@ class Ui_MainWindow(QMainWindow):
                             self.mameCfg.rompath = val
                         if key == 'workdir':
                             self.mameCfg.workdir = val
+                        if key == 'executable':
+                            self.mameCfg.executable = val
                         line = fp.readline()
-        except Exception as e:
+        except Exception as mameCfgExcept:
             traceback.print_exc()
-            raise e
+            raise mameCfgExcept
 
     def menuContextTree(self, point):
         index = self.treeWidget.indexAt(point)
@@ -451,7 +454,6 @@ class Ui_MainWindow(QMainWindow):
         dispDict = dict()
         if os.path.exists(fileToOpen):
             cfgList = list()
-            #    fileToOpen = 'e:\\AttractMode\\attract.cfg'
             with open(fileToOpen, "r") as amConfig:
                 line = amConfig.readline()
                 while line:
@@ -461,21 +463,82 @@ class Ui_MainWindow(QMainWindow):
                 lvl, dispKey, dispVal = getCfgLineKeyVal(line)
                 if lvl == 0 and dispKey == 'display':
                     dispDict[dispVal], i = loadDisplayCfg(cfgList, i)
+                    dispDict[dispVal]['ValidateExe'] = 'Unknown'
         else:
             showMsg('Error',
                     'Unable to find AttractMode config file.  Please go to preferences and select the AttractMode '
                     'directory and ensure a config file exists')
         return dispDict
 
+    def getMameCfgExeVersion(self, mameExe, mameDisp):
+        if mameExe != '':
+            if mameExe.find('.exe') == -1:
+                mameExe = mameExe + '.exe'
+            if os.path.exists(os.path.join(mameExe)):
+                mameVersionText = getMameVersion(mameExe)
+                versionWords = [item.strip(' )').upper() for item in mameVersionText.split('(')]
+
+                if len(versionWords) > 1:
+                    if versionWords[1][0:4] == 'MAME':
+                        print('Mame.cfg: Found Mame ' + self.mameCfg.executable + ' version: ' + versionWords[0])
+                        if mameDisp['ValidateExe'] == 'Unknown':
+                            mameDisp['ValidateExe'] = mameExe
+                    else:
+                        print('Mame.cfg: Non-Mame executable found (' + mameExe + ') version: '
+                              + versionWords[0])
+                    return versionWords[0]
+        return ''
+
+    def getPrefsExeVersion(self, mameExe, mameDisp):
+        if mameDisp['ValidateExe'] == 'Unknown':
+            if mameExe != '':
+                self.configUi.mameExe.setText(mameExe)
+                mameVersionText = getMameVersion(mameExe)
+                versionWords = [item.strip(' )').upper() for item in mameVersionText.split('(')]
+
+                if versionWords[1][0:4] == 'MAME':
+                    print('Preferences: Found Mame ' + self.configData.mameExe + ' version: ' + versionWords[0])
+                    mameDisp['ValidateExe'] = self.configData.mameExe
+                    return versionWords[0]
+                else:
+                    print('Invalid Mame executable')
+        return ''
+
     def loadAmConfigFile(self):
         if os.path.exists(self.configfile):
             self.configData.loadJSON(self.configfile)
             self.configUi.amDir.setText(self.configData.amDir)
-            self.configUi.mameExe.setText(self.configData.mameExe)
             self.dispDict = self.loadAmConfig(os.path.join(self.configData.amDir, "attract.cfg"))
-            self.addMenu('Display', self.dispDict, self.loadDisplay)
-            if 'Mame' in self.dispDict:
+            if 'Mame' in self.dispDict.keys():
+                mameDisp = self.dispDict['Mame']
+
+                self.loadMameCfg()
+
+                prefsMameVersion = self.getPrefsExeVersion(self.configData.mameExe, mameDisp)
+
+                # if self.dispDict['Mame']['ValidateExe'] == 'Unknown':
+                #     if self.configData.mameExe != '':
+                #         self.configUi.mameExe.setText(self.configData.mameExe)
+                #         mameVersionText = getMameVersion(self.configData.mameExe)
+                #         versionWords = [item.strip(' )').upper() for item in mameVersionText.split('(')]
+                #
+                #         if versionWords[1][0:4] == 'MAME':
+                #             print('Preferences: Found Mame ' + self.configData.mameExe + ' version: ' + versionWords[0])
+                #             self.dispDict['Mame']['ValidateExe'] = self.configData.mameExe
+                #             prefsMameVersion = versionWords[0]
+                #         else:
+                #             print('Invalid Mame executable')
+
+                mameCfgMameVersion = self.getMameCfgExeVersion(self.mameCfg.executable, mameDisp)
+
+                if prefsMameVersion != '' and mameCfgMameVersion != '' and prefsMameVersion != mameCfgMameVersion:
+                    print('Mame version mismatch between preferences Mame exe and mame.cfg exe ({} vs. {})'.
+                          format(prefsMameVersion, mameCfgMameVersion))
+
+                print('Validation exe: '+mameDisp['ValidateExe'])
+
                 self.loadList('Mame')
+            self.addMenu('Display', self.dispDict, self.loadDisplay)
 
     def showPreferences(self):
         currAmDir = self.configUi.amDir.text()
@@ -516,6 +579,7 @@ class Ui_MainWindow(QMainWindow):
             self.dataChanged = False
             action = self.sender()
             self.loadList(action.text())
+            self.currentDisplay = action.text()
 
     def closeProgram(self):
         self.close()
@@ -539,15 +603,15 @@ class Ui_MainWindow(QMainWindow):
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate(   "MainWindow", "Attract Mode List Manager"))
-        self.cloneBtn.setText(_translate(       "MainWindow", "Unselect Clones"))
-        self.label.setText(_translate(          "MainWindow", "Group Mode"))
-        self.parentBtn.setText(_translate(      "MainWindow", "Parent"))
-        self.titleBtn.setText(_translate(       "MainWindow", "Title"))
-        self.startBtn.setText(_translate(       "MainWindow", "Validate"))
-        self.expColBtn.setText(_translate(      "MainWindow", "Expand"))
-        self.failedBtn.setText(_translate(      "MainWindow", "Hide Unchecked"))
-        self.clearSearchBtn.setText(_translate( "MainWindow", "Clear Search"))
+        self.cloneBtn.setText(_translate("MainWindow", "Uncheck Clones"))
         self.treeWidget.setSortingEnabled(True)
+        self.clearSearchBtn.setText(_translate("MainWindow", "Clear Search"))
+        self.expColBtn.setText(_translate("MainWindow", "Expand All"))
+        self.label.setText(_translate("MainWindow", "Group Mode"))
+        self.parentBtn.setText(_translate("MainWindow", "Parent"))
+        self.titleBtn.setText(_translate("MainWindow", "Title"))
+        self.uncheckedBtn.setText(_translate("MainWindow", "Hide Unchecked"))
+        self.findDupButton.setText(_translate("MainWindow", "Find Duplicates"))
 
     def updateFileMenu(self):
         if self.dataChanged:
@@ -839,15 +903,6 @@ class Ui_MainWindow(QMainWindow):
                             if not self.hideUncheckedOn or item.parent().child(cIdx).checkState(0) == Qt.Checked:
                                 item.parent().child(cIdx).setHidden(False)
 
-        # for item in self.resultItems:
-        #     if not item.parent() and not item.isHidden():
-        #         showParent = False
-        #         for cIdx in range(item.childCount()):
-        #             if not item.child(cIdx).isHidden():
-        #                 showParent = True
-        #         if showParent:
-        #             item.setHidden(True)
-
     def searchList(self, field, searchTerm):
         if searchTerm != "" and field != "":
             self.findField = field
@@ -876,9 +931,9 @@ class Ui_MainWindow(QMainWindow):
             else:
                 self.treeWidget.collapseAll()
                 self.expColBtn.setText("Expand")
-        except Exception as e:
+        except Exception as expColTreeExcept:
             traceback.print_exc()
-            raise e
+            raise expColTreeExcept
             
     def openAmDirDialog(self):
         options = QFileDialog.Options()
@@ -926,9 +981,9 @@ class Ui_MainWindow(QMainWindow):
                             wordList = romItem.lstLine.strip('\n\r').split(';')
                             rom_name = wordList[self.lineHeaderDict['Name']]
                             of.write(rom_name+'\n')
-        except Exception as e:
+        except Exception as saveTagExcept:
             traceback.print_exc()
-            raise e
+            raise saveTagExcept
 
     def saveAlm(self):
         if self.dispLoaded != '' and len(self.romDict) > 0:
@@ -969,9 +1024,9 @@ class Ui_MainWindow(QMainWindow):
                 self.saveTag()
                 self.dataChanged = False
                 self.saveAct.setEnabled(False)
-        except Exception as e:
+        except Exception as saveListExcept:
             traceback.print_exc()
-            raise e
+            raise saveListExcept
 
     def addParent(self, newTitle, romname, emu, category):
         gameIdx = self.treeWidget.topLevelItemCount()
@@ -990,10 +1045,9 @@ class Ui_MainWindow(QMainWindow):
         treeItem.setText(self.col_category, category)
         return treeItem
 
-    def addChild(self, treeItem, newTitle, variation, romname, cloneOf, status, extra, category):
+    def addChild(self, treeItem, newTitle, variation, romname, cloneOf, status, category):
 
         childItem = QTreeWidgetItem()
-        extraList = extra.split(',')
 
         if romname in self.romDict and self.romDict[romname].excluded == 'Y':
             childItem.setCheckState(0, Qt.Unchecked)
@@ -1033,7 +1087,7 @@ class Ui_MainWindow(QMainWindow):
         titleCount = root.childCount()
         hiddenGroupCount = 0
         hiddenChildCount = 0
-        #self.treeWidget.topLevelItemCount()
+
         for idx in range(titleCount):
             item = root.child(idx)
             if item.isHidden():
@@ -1043,9 +1097,10 @@ class Ui_MainWindow(QMainWindow):
                 if child.isHidden():
                     hiddenChildCount += 1
 
-        if hiddenGroupCount > 0 or hiddenChildCount >0:
+        if hiddenGroupCount > 0 or hiddenChildCount > 0:
             self.statusBar().showMessage(
-                "{} Groups ({} hidden) containing {} games ({} hidden)".format(titleCount, hiddenGroupCount, len(self.romDict), hiddenChildCount))
+                "{} Groups ({} hidden) containing {} games ({} hidden)".format(titleCount, hiddenGroupCount,
+                                                                               len(self.romDict), hiddenChildCount))
         else:
             self.statusBar().showMessage(
                 "{} Groups containing {} games".format(titleCount, len(self.romDict)))
@@ -1062,9 +1117,7 @@ class Ui_MainWindow(QMainWindow):
         self.parentTitleDict.clear()
 
         titleCol = self.lineHeaderDict['Title']
-        cloneofCol = self.lineHeaderDict['CloneOf']
-        statusCol = self.lineHeaderDict['Status']
-        extraCol = self.lineHeaderDict['Extra']
+        cloneOfCol = self.lineHeaderDict['CloneOf']
         emuCol = self.lineHeaderDict['Emulator']
         catCol = self.lineHeaderDict['Category']
 
@@ -1076,7 +1129,7 @@ class Ui_MainWindow(QMainWindow):
 
         idx = 0
         self.treeLoading = True
-        
+
         for level in ('parent', 'child'):
             for romname, romItem in self.romDict.items():
                 line = romItem.lstLine
@@ -1086,10 +1139,9 @@ class Ui_MainWindow(QMainWindow):
                     if dui.isCancelled():
                         break
                     wordlist = line.strip('\n\r').split(';')
-                    cloneOf = wordlist[cloneofCol]
+                    cloneOf = wordlist[cloneOfCol]
                     title = wordlist[titleCol]
                     status = self.romDict[romname].status
-                    extra = wordlist[extraCol]
                     newTitle, variation = getTitleVariation(title)
                     emu = wordlist[emuCol]
                     category = wordlist[catCol]
@@ -1098,30 +1150,16 @@ class Ui_MainWindow(QMainWindow):
                         if level == 'parent':
                             if cloneOf == "":
                                 treeItem = self.addParent(newTitle, romname, emu, category)
-                                self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
+                                self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, category)
                         else:
-                            try:
-                                if cloneOf != "":
-                                    if cloneOf in self.parentCloneOfDict.keys():
-                                        gameIdx = self.parentCloneOfDict[cloneOf]
-                                        treeItem = self.treeWidget.topLevelItem(gameIdx)
-                                    else:
-                                        # Parent ROM not found, create dummy parent using cloneOf value
-                                        treeItem = self.addParent(cloneOf, cloneOf, emu, category)
-                                    self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra,
-                                                  category)
-                                # if cloneOf != "":
-                                #     if cloneOf in self.romDict.keys():
-                                #         gameIdx = self.romDict[cloneOf].treeIdx
-                                #         treeItem = self.treeWidget.topLevelItem(gameIdx)
-                                #     else:
-                                #         # Parent ROM not found, create dummy parent using cloneOf value
-                                #         treeItem = self.addParent(cloneOf, cloneOf, emu, category)
-                                #     self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
-                            except Exception as e:
-                                print("failed "+romname)
-                                #traceback.print_exc()
-                                #raise e
+                            if cloneOf != "":
+                                if cloneOf in self.parentCloneOfDict.keys():
+                                    gameIdx = self.parentCloneOfDict[cloneOf]
+                                    treeItem = self.treeWidget.topLevelItem(gameIdx)
+                                else:
+                                    # Parent ROM not found, create dummy parent using cloneOf value
+                                    treeItem = self.addParent(cloneOf, cloneOf, emu, category)
+                                self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, category)
 
                     elif mode == 'title':
                         if level == 'parent':
@@ -1130,14 +1168,14 @@ class Ui_MainWindow(QMainWindow):
                         else:
                             gameIdx = self.parentTitleDict[newTitle]
                             treeItem = self.treeWidget.topLevelItem(gameIdx)
-                            self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, extra, category)
+                            self.addChild(treeItem, newTitle, variation, romname, cloneOf, status, category)
                     idx += 1
                     dui.setProgressValue(idx)
                     if idx % 100 == 0:
                         app.processEvents()
-                except Exception as e:
+                except Exception as loadTreeExcept:
                     traceback.print_exc()
-                    raise e
+                    raise loadTreeExcept
         self.treeLoading = False
         self.treeWidget.setSortingEnabled(True)
         self.showStatus()
@@ -1222,7 +1260,9 @@ class Ui_MainWindow(QMainWindow):
                                 self.romDict[almFields[0]].locked = almFields[2]
                                 self.romDict[almFields[0]].status = almFields[3]
                             else:
-                                self.romDict[almFields[0]] = self.romItem(excluded=almFields[1], locked=almFields[2], status=almFields[3])
+                                self.romDict[almFields[0]] = self.romItem(excluded=almFields[1],
+                                                                          locked=almFields[2],
+                                                                          status=almFields[3])
                             line = fp.readline().strip('\n')
 
                 self.loadTree('parent')
@@ -1237,20 +1277,15 @@ class Ui_MainWindow(QMainWindow):
                 self.treeWidget.expandAll()
                 self.expColBtn.setText("Collapse")
 
-        except Exception as e:
+        except Exception as loadListExcept:
             traceback.print_exc()
-            raise e
+            raise loadListExcept
 
-    def getMameVersion(self):
-        ret = subprocess.run(
-            ["e:\\mame\\mame64.exe", "-version"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        print('Found Mame version {}'.format(ret))
-
-    def processRom(self, romname):
-        ret = subprocess.run(
-            [self.configData.mameExe, romname, "-verifyroms", "-rompath", self.mameCfg.rompath],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+    def validateRom(self, romname):
+        if self.dispDict['Mame']['ValidateExe'] != 'Unknown':
+            ret = subprocess.run(
+                [self.configData.mameExe, romname, "-verifyroms", "-rompath", self.mameCfg.rompath],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
 
     #        if ret.stdout != "":
 #            linelist = list(enumerate(ret.stdout.split('\n')))
@@ -1263,12 +1298,14 @@ class Ui_MainWindow(QMainWindow):
 #                break
             
 #        return ret.returncode, l
-        return ret.returncode
+            return ret.returncode
+        else:
+            return None
 
     def validateTreeItem(self, treeItem):
         try:
             rom_name = treeItem.text(self.col_rom)
-            return_code = self.processRom(rom_name)
+            return_code = self.validateRom(rom_name)
             if return_code != 0:
                 treeItem.setCheckState(0, Qt.Unchecked)
                 status = 'fail'
@@ -1281,9 +1318,10 @@ class Ui_MainWindow(QMainWindow):
             self.romDict[rom_name].status = status
             return status
 
-        except Exception as e:
+        except Exception as validateTreeItemExcept:
             traceback.print_exc()
-            raise e
+            raise validateTreeItemExcept
+
 #    def msgbtn(self, i):
 #        print("Button pressed is {}".format(i.text()))
 
@@ -1322,14 +1360,12 @@ class Ui_MainWindow(QMainWindow):
                 item = root.child(idx)
                 for cIdx in range(item.childCount()):
                     pIdx += 1
-                    child = item.child(cIdx)
-                    status = self.validateTreeItem(child)
                 dui.setProgressValue(pIdx)
                 self.statusBar().showMessage("{0} / {1}".format(pIdx, romCount))
                 app.processEvents()
-        except Exception as e:
+        except Exception as processListExcept:
             traceback.print_exc()
-            raise e
+            raise processListExcept
 
     def findDuplicates(self):
         try:
@@ -1363,40 +1399,9 @@ class Ui_MainWindow(QMainWindow):
                         if child.checkState(0) == QtCore.Qt.Checked:
                             child.setHidden(False)
 
-#            regFont = QFont()
-#            regFont.setBold(False)
-#            boldFont = QFont()
-#            boldFont.setBold(True)
-#            root = self.treeWidget.invisibleRootItem()
-#            titleCount = root.childCount()
-#            self.treeWidget.setSortingEnabled(False)
-#            for idx in range(titleCount):
-#                item = root.child(idx)
-#                if item.checkState(0) == QtCore.Qt.Unchecked:
-#                    item.setText(4, 'Excluded')
-#                else:
-#                    romname = ""
-#                    variation = ""
-#                    checkedCount = 0
-#                    for cIdx in range(item.childCount()):
-#                        child = item.child(cIdx)
-#                        if child.checkState(0) == QtCore.Qt.Checked:
-#                            if romname != "":
-#                                item.setFont(0, boldFont)
-#                                romname = ""
-#                                item.setText(4, 'Duplicates')
-#                                break
-#                            variation = child.text(1)
-#                            romname = child.text(2)
-#                    if romname != "":
-#                        item.setFont(0, regFont)
-#                        item.setText(1, variation)
-#                        item.setText(2, romname)
-#                        item.setText(4, 'Good')
-#            self.treeWidget.setSortingEnabled(True)
-        except Exception as e:
+        except Exception as findDuplicatesExcept:
             traceback.print_exc()
-            raise e
+            raise findDuplicatesExcept
 
     def unselectClones(self):
         try:
@@ -1419,12 +1424,13 @@ class Ui_MainWindow(QMainWindow):
                         for cIdx in range(item.childCount()):
                             child = item.child(cIdx)
                             if (child.checkState(0) == QtCore.Qt.Checked
-                                    and child.text(self.col_cloneof) == parentRom and self.romDict[child.text(self.col_rom)].locked == 'N'):
+                                    and child.text(self.col_cloneof) == parentRom
+                                    and self.romDict[child.text(self.col_rom)].locked == 'N'):
                                 child.setCheckState(0, Qt.Unchecked)
 #            self.findDuplicates()
-        except Exception as e:
+        except Exception as unselectClonesExcept:
             traceback.print_exc()
-            raise e
+            raise unselectClonesExcept
 
     def setUncheckedHidden(self, hidden):
         try:
@@ -1461,21 +1467,21 @@ class Ui_MainWindow(QMainWindow):
                         if not self.searchOn:
                             item.setHidden(False)
 
-        except Exception as e:
+        except Exception as setUnceckedHiddenExcept:
             traceback.print_exc()
-            raise e
+            raise setUnceckedHiddenExcept
 
     def toggleUncheckedHidden(self):
-        if self.failedBtn.text() == 'Hide Unchecked':
+        if self.uncheckedBtn.text() == 'Hide Unchecked':
             self.setUncheckedHidden(True)
-            self.failedBtn.setText('Show Unchecked')
+            self.uncheckedBtn.setText('Show Unchecked')
         else:
             self.setUncheckedHidden(False)
-            self.failedBtn.setText('Hide Unchecked')
+            self.uncheckedBtn.setText('Hide Unchecked')
         self.showStatus()
 
     def applyUncheckedHidden(self):
-        if self.failedBtn.text() == 'Hide Unchecked':
+        if self.uncheckedBtn.text() == 'Hide Unchecked':
             self.setUncheckedHidden(False)
         else:
             self.setUncheckedHidden(True)
@@ -1486,6 +1492,7 @@ class Ui_MainWindow(QMainWindow):
         self.findField = ''
         self.findText = ''
         self.searchOn = False
+
 
 if __name__ == "__main__":
     import sys
