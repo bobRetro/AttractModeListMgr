@@ -48,25 +48,24 @@ def showMsg(windowTitle, message):
         raise msgException
 
 
-def loadDisplayCfg(cfgList, listIdx):
-    cfgDict = dict()
-    cfgDict['filter'] = dict()
+def loadDisplayCfg(cfgList, displayCfg, listIdx):
     filterName = ''
+    displayCfg.filterDict = dict()
     for i in range(listIdx+1, len(cfgList)):
         line = cfgList[i]
         lvl, cfgKey, cfgVal = getCfgLineKeyVal(line)
         if lvl == 1:
             if cfgKey == 'filter':
                 filterName = cfgVal
-                cfgDict['filter'][filterName] = list()
+                displayCfg.filterDict[filterName] = list()
             else:
-                cfgDict[cfgKey] = cfgVal
+                displayCfg.cfgDict[cfgKey] = cfgVal
         elif lvl == 2 and cfgKey == 'rule':
-            cfgDict['filter'][filterName].append(cfgVal)
+            displayCfg.filterDict[filterName].append(cfgVal)
         elif lvl == 0:
-            return cfgDict, i
+            return i
 
-    return cfgDict, len(cfgList)
+    return len(cfgList)
 
 
 def getTitleVariation(title):
@@ -195,7 +194,7 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy.setHeightForWidth(self.treeWidget.sizePolicy().hasHeightForWidth())
         self.treeWidget.setSizePolicy(sizePolicy)
         self.treeWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.treeWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.treeWidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.treeWidget.setColumnCount(4)
         self.treeWidget.setObjectName("treeWidget")
         self.treeWidget.headerItem().setText(0, "1")
@@ -261,6 +260,9 @@ class Ui_MainWindow(QMainWindow):
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
+
+        self.treeWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.treeWidget.customContextMenuRequested.connect(self.menuContextTree)
 
         self.lockIcon = QtGui.QIcon("lock.ico")
         self.unlockIcon = QtGui.QIcon("unlock.ico")
@@ -462,8 +464,13 @@ class Ui_MainWindow(QMainWindow):
             for i, line in enumerate(cfgList):
                 lvl, dispKey, dispVal = getCfgLineKeyVal(line)
                 if lvl == 0 and dispKey == 'display':
-                    dispDict[dispVal], i = loadDisplayCfg(cfgList, i)
-                    dispDict[dispVal]['ValidateExe'] = 'Unknown'
+                    displayCfg = recordtype('displayCfg', [('cfgDict', {}), ('filterDict', {}), ('romDict', {})])
+                    displayCfg.cfgDict = dict()
+                    displayCfg.romDict = dict()
+                    displayCfg.cfgDict['validateExe'] = 'Unknown'
+                    dispDict[dispVal] = displayCfg
+
+                    i = loadDisplayCfg(cfgList, displayCfg, i)
         else:
             showMsg('Error',
                     'Unable to find AttractMode config file.  Please go to preferences and select the AttractMode '
@@ -481,8 +488,8 @@ class Ui_MainWindow(QMainWindow):
                 if len(versionWords) > 1:
                     if versionWords[1][0:4] == 'MAME':
                         print('Mame.cfg: Found Mame ' + self.mameCfg.executable + ' version: ' + versionWords[0])
-                        if mameDisp['ValidateExe'] == 'Unknown':
-                            mameDisp['ValidateExe'] = mameExe
+                        if mameDisp.cfgDict['validateExe'] == 'Unknown':
+                            mameDisp.cfgDict['validateExe'] = mameExe
                     else:
                         print('Mame.cfg: Non-Mame executable found (' + mameExe + ') version: '
                               + versionWords[0])
@@ -490,7 +497,7 @@ class Ui_MainWindow(QMainWindow):
         return ''
 
     def getPrefsExeVersion(self, mameExe, mameDisp):
-        if mameDisp['ValidateExe'] == 'Unknown':
+        if mameDisp.cfgDict['validateExe'] == 'Unknown':
             if mameExe != '':
                 self.configUi.mameExe.setText(mameExe)
                 mameVersionText = getMameVersion(mameExe)
@@ -498,17 +505,30 @@ class Ui_MainWindow(QMainWindow):
 
                 if versionWords[1][0:4] == 'MAME':
                     print('Preferences: Found Mame ' + self.configData.mameExe + ' version: ' + versionWords[0])
-                    mameDisp['ValidateExe'] = self.configData.mameExe
+                    mameDisp.cfgDict['validateExe'] = self.configData.mameExe
                     return versionWords[0]
                 else:
                     print('Invalid Mame executable')
         return ''
+
+    def printDispCfg(self, pDisplay):
+        disp = self.dispDict[pDisplay]
+
+        print('\n--------------- '+pDisplay+' ---------------\n')
+        for i in disp.cfgDict.items():
+            print('{} = {}'.format(i[0], i[1]))
+
+        for fName in disp.filterDict.keys():
+            print('filter='+fName)
+            for rule in disp.filterDict[fName]:
+                print(' -- '+rule)
 
     def loadAmConfigFile(self):
         if os.path.exists(self.configfile):
             self.configData.loadJSON(self.configfile)
             self.configUi.amDir.setText(self.configData.amDir)
             self.dispDict = self.loadAmConfig(os.path.join(self.configData.amDir, "attract.cfg"))
+
             if 'Mame' in self.dispDict.keys():
                 mameDisp = self.dispDict['Mame']
 
@@ -535,7 +555,7 @@ class Ui_MainWindow(QMainWindow):
                     print('Mame version mismatch between preferences Mame exe and mame.cfg exe ({} vs. {})'.
                           format(prefsMameVersion, mameCfgMameVersion))
 
-                print('Validation exe: '+mameDisp['ValidateExe'])
+                print('Validation exe: '+mameDisp.cfgDict['validateExe'])
 
                 self.loadList('Mame')
             self.addMenu('Display', self.dispDict, self.loadDisplay)
@@ -1183,6 +1203,7 @@ class Ui_MainWindow(QMainWindow):
     def loadList(self, listName):
         try:
             self.dispLoaded = listName
+            self.printDispCfg(listName)
 
             fileToOpen = os.path.join(self.configData.amDir, "romlists\\" + listName + ".txt")
             if os.path.exists(fileToOpen):
@@ -1282,7 +1303,7 @@ class Ui_MainWindow(QMainWindow):
             raise loadListExcept
 
     def validateRom(self, romname):
-        if self.dispDict['Mame']['ValidateExe'] != 'Unknown':
+        if self.dispDict['Mame'].cfgDict['validateExe'] != 'Unknown':
             ret = subprocess.run(
                 [self.configData.mameExe, romname, "-verifyroms", "-rompath", self.mameCfg.rompath],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
