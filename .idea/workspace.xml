@@ -1,9 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="692904ea-1415-41f5-8bc8-6bf9a1a553bc" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/AttractModeMameListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeMameListMgr.py" afterDir="false" />
+    <list default="true" id="b4517a6c-0ceb-40c7-9a38-325443a0547f" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/AttractModeMameListMgr.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/AttractModeMameListMgr.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgr.cfg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AttractModeMameListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AttractModeMameListMgr.ui" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/AttractModeMameListMgrWindow.ui" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgrWindow.ui" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/window.py" beforeDir="false" afterPath="$PROJECT_DIR$/window.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -13,20 +25,8 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitSEFilterConfiguration">
-    <file-type-list>
-      <filtered-out-file-type name="LOCAL_BRANCH" />
-      <filtered-out-file-type name="REMOTE_BRANCH" />
-      <filtered-out-file-type name="TAG" />
-      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
-    </file-type-list>
-  </component>
-  <component name="ProblemsViewState">
-    <hideBySeverity>
-      <option value="15" />
-    </hideBySeverity>
-  </component>
-  <component name="ProjectId" id="1mbvha0JIzyIkf7IZ2b8THWg0Kj" />
+  <component name="ProjectId" id="1o1cdYrLvaojKYkYyLlCpjDAjQf" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -34,12 +34,10 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunManager">
-    <configuration name="AttractModeMameListMgr" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="AttractModeMameListMgr" />
+    <configuration name="AttractModeListMgr" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="AttractModeListMgr" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -50,7 +48,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/AttractModeMameListMgr.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/AttractModeListMgr.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -61,41 +59,19 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.AttractModeMameListMgr" />
+        <item itemvalue="Python.AttractModeListMgr" />
       </list>
     </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="692904ea-1415-41f5-8bc8-6bf9a1a553bc" name="Default Changelist" comment="" />
-      <created>1609775224798</created>
+      <changelist id="b4517a6c-0ceb-40c7-9a38-325443a0547f" name="Default Changelist" comment="" />
+      <created>1612457625052</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1609775224798</updated>
+      <updated>1612457625052</updated>
     </task>
     <servers />
-  </component>
-  <component name="Vcs.Log.Tabs.Properties">
-    <option name="TAB_STATES">
-      <map>
-        <entry key="MAIN">
-          <value>
-            <State />
-          </value>
-        </entry>
-      </map>
-    </option>
-    <option name="oldMeFiltersMigrated" value="true" />
-  </component>
-  <component name="XDebuggerManager">
-    <watches-manager>
-      <configuration name="PythonConfigurationType">
-        <watch expression="self.romDict['005'].locked" language="Python" />
-        <watch expression="romname" language="Python" />
-        <watch expression="self.romDict" language="Python" />
-        <watch expression="child.text(0)" language="Python" />
-      </configuration>
-    </watches-manager>
   </component>
 </project>
