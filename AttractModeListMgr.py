@@ -3,6 +3,8 @@ import subprocess
 import os.path
 import functools
 
+import win32api
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.Qt import *
 from PyQt5.QtWidgets import QTreeWidgetItem
@@ -258,7 +260,9 @@ class Ui_MainWindow(QMainWindow):
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
+        self.MyMessage = QtWidgets.QLabel()
         MainWindow.setStatusBar(self.statusbar)
+        self.statusbar.addPermanentWidget(self.MyMessage)
 
         self.treeWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.treeWidget.customContextMenuRequested.connect(self.menuContextTree)
@@ -317,11 +321,11 @@ class Ui_MainWindow(QMainWindow):
         exitAct.setStatusTip('Exit application')
         exitAct.triggered.connect(self.closeProgram)
 
-        icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogOpenButton')))
-        loadAct = QAction(icon, 'Load', self)
-        loadAct.setShortcut('Ctrl+L')
-        loadAct.setStatusTip('Load File')
-        loadAct.triggered.connect(lambda: self.loadTree(self.currentDisplay, self.groupMode))
+        # icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogOpenButton')))
+        # loadAct = QAction(icon, 'Load', self)
+        # loadAct.setShortcut('Ctrl+L')
+        # loadAct.setStatusTip('Load File')
+        # loadAct.triggered.connect(lambda: self.loadTree(self.currentDisplay, self.groupMode))
 
         icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogSaveButton')))
         
@@ -342,7 +346,7 @@ class Ui_MainWindow(QMainWindow):
         configAct.triggered.connect(self.showPreferences)
 
         fileMenu = menubar.addMenu('&File')
-        fileMenu.addAction(loadAct)
+#        fileMenu.addAction(loadAct)
         fileMenu.addAction(self.saveAct)
         fileMenu.addAction(findAct)
         fileMenu.addAction(configAct)
@@ -367,14 +371,6 @@ class Ui_MainWindow(QMainWindow):
         self.retranslateUi()
 
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-        self.loadAmConfigFile()
-        for disp in self.dispDict.keys():
-            self.loadList(disp)
-        self.firstLoad = False
-
-        self.loadTree('Mame', 'parent')
-        self.addMenu('Display', self.dispDict, self.loadDisplay)
 
         # for i in self.dispDict.keys():
         #     print(i)
@@ -494,11 +490,30 @@ class Ui_MainWindow(QMainWindow):
                     'directory and ensure a config file exists')
         return dispDict
 
+    def get_version_number(self, filename):
+        try:
+            info = win32api.GetFileVersionInfo(filename, "\\")
+            ms = info['FileVersionMS']
+            ls = info['FileVersionLS']
+            return str(win32api.HIWORD(ms))+'.'+str(win32api.LOWORD(ms))
+        except:
+            return "Unknown version"
+
+    def getFileDescription(self, windows_exe):
+        try:
+            language, codepage = win32api.GetFileVersionInfo(windows_exe, '\\VarFileInfo\\Translation')[0]
+            stringFileInfo = u'\\StringFileInfo\\%04X%04X\\%s' % (language, codepage, "FileDescription")
+            description = win32api.GetFileVersionInfo(windows_exe, stringFileInfo)
+        except:
+            description = "unknown"
+
+        return description
+
     def getMameCfgExeVersion(self, mameExe, mameDisp):
         if mameExe != '':
             if mameExe.find('.exe') == -1:
                 mameExe = mameExe + '.exe'
-            if os.path.exists(os.path.join(mameExe)):
+            if os.path.exists(os.path.join(mameExe)) and self.getFileDescription(mameExe) == 'MAME':
                 mameVersionText = getMameVersion(mameExe)
                 versionWords = [item.strip(' )').upper() for item in mameVersionText.split('(')]
 
@@ -511,21 +526,24 @@ class Ui_MainWindow(QMainWindow):
                         print('Mame.cfg: Non-Mame executable found (' + mameExe + ') version: '
                               + versionWords[0])
                     return versionWords[0]
+            else:
+                print('Executable in mame.cfg ('+mameExe+') does not appear to be a MAME build')
         return ''
 
     def getPrefsExeVersion(self, mameExe, mameDisp):
-        if mameDisp.cfgDict['validateExe'] == 'Unknown':
-            if mameExe != '':
-                self.configUi.mameExe.setText(mameExe)
-                mameVersionText = getMameVersion(mameExe)
-                versionWords = [item.strip(' )').upper() for item in mameVersionText.split('(')]
+        if mameExe != '' and self.getFileDescription(mameExe) == 'MAME':
+            self.configUi.mameExe.setText(mameExe)
+            mameVersionText = getMameVersion(mameExe)
+            versionWords = [item.strip(' )').upper() for item in mameVersionText.split('(')]
 
-                if versionWords[1][0:4] == 'MAME':
-                    print('Preferences: Found Mame ' + self.configData.mameExe + ' version: ' + versionWords[0])
-                    mameDisp.cfgDict['validateExe'] = self.configData.mameExe
-                    return versionWords[0]
-                else:
-                    print('Invalid Mame executable')
+            if len(versionWords) > 1 and len(versionWords[1]) >= 4 and versionWords[1][0:4] == 'MAME':
+                print('Preferences: Found Mame ' + self.configData.mameExe + ' version: ' + versionWords[0])
+                mameDisp.cfgDict['validateExe'] = self.configData.mameExe
+                return versionWords[0]
+            else:
+                print('Executable is not an official MAME build')
+        else:
+            print('Executable is not a MAME build')
         return ''
 
     def printDispCfg(self, pDisplay):
@@ -548,9 +566,7 @@ class Ui_MainWindow(QMainWindow):
 
             if 'Mame' in self.dispDict.keys():
                 mameDisp = self.dispDict['Mame']
-
                 self.loadMameCfg()
-
                 prefsMameVersion = self.getPrefsExeVersion(self.configData.mameExe, mameDisp)
                 mameCfgMameVersion = self.getMameCfgExeVersion(self.mameCfg.executable, mameDisp)
 
@@ -560,12 +576,6 @@ class Ui_MainWindow(QMainWindow):
 
                 print('Validation exe: '+mameDisp.cfgDict['validateExe'])
 
-            # for disp in self.dispDict.keys():
-            #     self.loadList(disp)
-            #
-            # self.loadTree('Mame', 'parent')
-            # self.addMenu('Display', self.dispDict, self.loadDisplay)
-
     def showPreferences(self):
         currAmDir = self.configUi.amDir.text()
         currMameExe = self.configUi.mameExe.text()
@@ -573,20 +583,20 @@ class Ui_MainWindow(QMainWindow):
         self.configDialog.show()
         rsp = self.configDialog.exec_()
         if rsp == QDialog.Accepted:
-            if self.configData.amDir != self.configUi.amDir.text():
-                loadConfig = True
-            else:
-                loadConfig = False
             if (self.configData.amDir != self.configUi.amDir.text() or
                     self.configData.mameExe != self.configUi.mameExe.text()):
+                loadConfig = True
                 self.configData.amDir = self.configUi.amDir.text()
                 self.configData.mameExe = self.configUi.mameExe.text()
                 self.configData.saveJSON(self.configfile)
+            else:
+                loadConfig = False
             if loadConfig:
                 self.loadAmConfigFile()
         else:
             self.configUi.amDir.setText(currAmDir)
             self.configUi.mameExe.setText(currMameExe)
+        return rsp
 
     def dataChanged(self):
         if len(self.dispDict) > 0:
@@ -888,12 +898,13 @@ class Ui_MainWindow(QMainWindow):
                 action = menu.addAction("Validate"+name)
                 action.triggered.connect(functools.partial(self.validateSelected, 'selected'))
             else:
-                action = menu.addAction("Validate failed")
-                action.triggered.connect(functools.partial(self.validateSelected, 'failed'))
-                action = menu.addAction("Validate passed")
-                action.triggered.connect(functools.partial(self.validateSelected, 'passed'))
-                action = menu.addAction("Validate selected")
-                action.triggered.connect(functools.partial(self.validateSelected, 'selected'))
+                if self.dispDict[self.currentDisplay].cfgDict['validateExe'] != 'Unknown':
+                    action = menu.addAction("Validate failed")
+                    action.triggered.connect(functools.partial(self.validateSelected, 'failed'))
+                    action = menu.addAction("Validate passed")
+                    action.triggered.connect(functools.partial(self.validateSelected, 'passed'))
+                    action = menu.addAction("Validate selected")
+                    action.triggered.connect(functools.partial(self.validateSelected, 'selected'))
 
     def setSelectedCheckStatus(self, status):
         selected_items = self.treeWidget.selectedItems()
@@ -1150,11 +1161,14 @@ class Ui_MainWindow(QMainWindow):
                     hiddenChildCount += 1
 
         if hiddenGroupCount > 0 or hiddenChildCount > 0:
-            self.statusBar().showMessage(
-                "{} Groups ({} hidden) containing {} games ({} hidden)".format(titleCount, hiddenGroupCount,
-                                                                               len(self.dispDict[self.currentDisplay].romDict), hiddenChildCount))
+            self.MyMessage.setText(
+                "{} Groups ({} hidden) containing {} games ({} hidden)".
+                    format(titleCount - hiddenGroupCount,
+                           hiddenGroupCount,
+                           len(self.dispDict[self.currentDisplay].romDict) - hiddenChildCount,
+                           hiddenChildCount))
         else:
-            self.statusBar().showMessage(
+            self.MyMessage.setText(
                 "{} Groups containing {} games".format(titleCount, len(self.dispDict[self.currentDisplay].romDict)))
 
     def loadTree(self, listName, mode):
@@ -1501,6 +1515,18 @@ class Ui_MainWindow(QMainWindow):
         self.findField = ''
         self.findText = ''
         self.searchOn = False
+        self.showStatus()
+
+    def loadAllDisplays(self):
+        rsp = QDialog.Accepted
+        while rsp == QDialog.Accepted and len(self.dispDict) == 0:
+            rsp = self.showPreferences()
+        if len(self.dispDict) > 0:
+            for disp in self.dispDict.keys():
+                self.loadList(disp)
+            self.firstLoad = False
+            self.loadTree(list(self.dispDict.keys())[0], 'parent')
+            self.addMenu('Display', self.dispDict, self.loadDisplay)
 
 
 if __name__ == "__main__":
@@ -1510,6 +1536,9 @@ if __name__ == "__main__":
     MainWindow = Ui_MainWindow()
     MainWindow.setupUi()
     MainWindow.show()
+    MainWindow.loadAmConfigFile()
+    MainWindow.loadAllDisplays()
+
     try:
         sys.exit(app.exec_())
     except Exception as e:
