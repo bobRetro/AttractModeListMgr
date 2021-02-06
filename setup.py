@@ -12,4 +12,9 @@ setup(windows=[{"script":"AttractModeListMgr.py"}],
                                    "C:\\Users\\Video\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages\\PyQt5\\Qt\\plugins\\imageformats\\qtga.dll",
                                    "C:\\Users\\Video\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages\\PyQt5\\Qt\\plugins\\imageformats\\qtiff.dll",
                                    "C:\\Users\\Video\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages\\PyQt5\\Qt\\plugins\\imageformats\\qwbmp.dll",
-                                   "C:\\Users\\Video\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages\\PyQt5\\Qt\\plugins\\imageformats\\qwebp.dll"])])
+                                   "C:\\Users\\Video\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages\\PyQt5\\Qt\\plugins\\imageformats\\qwebp.dll"]),
+                  ("icons", ["icons\\error.ico", "icons\\Iconsmind-Outline-Yes.ico", "icons\\Lock.ico", "icons\\Star.ico", "icons\\Unlock.ico"]),
+                  ("documentation",  ["documentation\\AttractMode List Manager.docx"]),
+                  (".", ["LICENSE", "README.md"])
+                 ]
+    )
