@@ -3,6 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="b4517a6c-0ceb-40c7-9a38-325443a0547f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AttractModeListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AttractModeListMgrWindow.ui" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgrWindow.ui" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/documentation/~$tractMode List Manager.docx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyuicw.bat" beforeDir="false" afterPath="$PROJECT_DIR$/pyuicw.bat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/window.py" beforeDir="false" afterPath="$PROJECT_DIR$/window.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -17,6 +22,7 @@
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
+    <option name="showMembers" value="true" />
   </component>
   <component name="PropertiesComponent">
     <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
@@ -63,5 +69,27 @@
       <updated>1612457625052</updated>
     </task>
     <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/AttractModeListMgr.py</url>
+          <line>433</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/AttractModeListMgr.py</url>
+          <line>668</line>
+          <option name="timeStamp" value="14" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+    <watches-manager>
+      <configuration name="PythonConfigurationType">
+        <watch expression="self.priorGroupMode" />
+        <watch expression="self.groupMode" />
+      </configuration>
+    </watches-manager>
   </component>
 </project>
