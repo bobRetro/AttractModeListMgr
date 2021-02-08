@@ -166,7 +166,6 @@ class Ui_MainWindow(QMainWindow):
     configData = AmConfig()
     configfile = 'AttractModeListMgr.cfg'
     groupMode = 'parent'
-    priorGroupMode = 'parent'
     mameCfg = recordtype('mameCfg', [('rompath', ''), ('workdir', ''), ('executable', '')])
 
     firstLoad = True
@@ -334,7 +333,7 @@ class Ui_MainWindow(QMainWindow):
         # loadAct = QAction(icon, 'Load', self)
         # loadAct.setShortcut('Ctrl+L')
         # loadAct.setStatusTip('Load File')
-        # loadAct.triggered.connect(lambda: self.loadTree(self.currentDisplay, self.groupMode))
+        # loadAct.triggered.connect(lambda: self.loadTree(self.currentDisplay, self.dispDict[self.currentDisplay].groupMode))
 
         icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogSaveButton')))
         
@@ -451,6 +450,13 @@ class Ui_MainWindow(QMainWindow):
 
         menu.exec_(self.treeWidget.mapToGlobal(point))
 
+    def setMenuIcons(self):
+        for d in self.dispDict.keys():
+            if d == self.currentDisplay:
+                self.dispDict[d].action.setIcon(self.starIcon)
+            else:
+                self.dispDict[d].action.setIcon(self.blankIcon)
+
     def addMenu(self, menuName, subMenuDict, connectAction):
         dispMenu = None
         # Attempt to find menu by name
@@ -470,6 +476,8 @@ class Ui_MainWindow(QMainWindow):
         for s in subMenuDict.keys():
             dispAct = QAction(s, self)
             dispAct.triggered.connect(functools.partial(connectAction, s))
+            if menuName == 'Display':
+                self.dispDict[s].action = dispAct
 
             dispMenu.addAction(dispAct)
 
@@ -490,12 +498,14 @@ class Ui_MainWindow(QMainWindow):
                                                            ('romDict', {}),
                                                            ('favList', []),
                                                            ('dataChanged', False),
-                                                           ('groupMode', '')
+                                                           ('groupMode', 'parent'),
+                                                           ('action', None)
                                                            ])
                     displayCfg.cfgDict = dict()
                     displayCfg.romDict = dict()
                     displayCfg.favList = list()
                     displayCfg.cfgDict['validateExe'] = 'Unknown'
+                    displayCfg.groupMode = 'parent'
                     dispDict[dispVal] = displayCfg
 
                     i = loadDisplayCfg(cfgList, displayCfg, i)
@@ -648,12 +658,15 @@ class Ui_MainWindow(QMainWindow):
 
     def loadDisplay(self, displayName):
 #        action = self.sender()
-
         if displayName != self.currentDisplay:
+            self.titleBtn.setDisabled(False)
+            self.parentBtn.setDisabled(False)
             if displayName == 'Favorites':
-                self.priorGroupMode = self.groupMode
-                self.groupMode = 'none'
-                self.noneBtn.setChecked(True)
+                self.currentDisplay = displayName
+                if not self.noneBtn.isChecked():
+                    self.noneBtn.setChecked(True)
+                else:
+                    self.loadTree(displayName, 'none')
                 self.titleBtn.setDisabled(True)
                 self.parentBtn.setDisabled(True)
             else:
@@ -662,23 +675,32 @@ class Ui_MainWindow(QMainWindow):
                     if item.cloneOf != '':
                         clonesExist = True
                         break
-                if not clonesExist and self.priorGroupMode == 'parent':
-                    self.titleBtn.setChecked(True)
-                    self.priorGroupMode = 'title'
+                if not clonesExist:
+                    self.parentBtn.setDisabled(True)
+                    if self.dispDict[displayName].groupMode == 'parent':
+                        self.dispDict[displayName].groupMode = 'title'
 
-                self.titleBtn.setDisabled(False)
-                self.parentBtn.setDisabled(False)
-
-                if self.priorGroupMode == 'parent':
-                    self.parentBtn.setChecked(True)
-                elif self.priorGroupMode == 'title':
-                    self.titleBtn.setChecked(True)
+                if self.dispDict[displayName].groupMode == 'parent':
+                    if not self.parentBtn.isChecked():
+                        self.currentDisplay = displayName
+                        self.groupMode = 'parent'
+                        self.parentBtn.setChecked(True)
+                elif self.dispDict[displayName].groupMode == 'title':
+                    if not self.titleBtn.isChecked():
+                        self.currentDisplay = displayName
+                        self.groupMode = 'title'
+                        self.titleBtn.setChecked(True)
                 else:
-                    self.noneBtn.setChecked(True)
+                    if not self.noneBtn.isChecked():
+                        self.currentDisplay = displayName
+                        self.groupMode = 'none'
+                        self.noneBtn.setChecked(True)
 
-            self.loadTree(displayName, self.groupMode)
-            self.currentDisplay = displayName
+            if displayName != self.currentDisplay:
+                self.loadTree(displayName, self.dispDict[displayName].groupMode)
+                self.currentDisplay = displayName
             self.treeWidget.sortByColumn(self.col_name, Qt.AscendingOrder)
+            self.setMenuIcons()
 
     def closeProgram(self):
         self.close()
@@ -721,7 +743,7 @@ class Ui_MainWindow(QMainWindow):
         if not self.treeLoading:
             self.dispDict[self.currentDisplay].dataChanged = True
             MainWindow.setWindowTitle(QtCore.QCoreApplication.translate("MainWindow", self.windowTitle+' *'))
-            if item.parent() or self.groupMode == 'none':
+            if item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
                 romName = item.text(self.col_rom)
                 newLine = self.dispDict[self.currentDisplay].romDict[romName].lstLine
 
@@ -743,18 +765,21 @@ class Ui_MainWindow(QMainWindow):
         radioButton = self.sender()
         if radioButton.isChecked():
             if radioButton.objectName() == 'parentBtn':
+                self.dispDict[self.currentDisplay].groupMode = 'parent'
                 self.groupMode = 'parent'
                 self.expColBtn.setDisabled(False)
                 self.cloneBtn.setDisabled(False)
             elif radioButton.objectName() == 'titleBtn':
+                self.dispDict[self.currentDisplay].groupMode = 'title'
                 self.groupMode = 'title'
                 self.expColBtn.setDisabled(False)
                 self.cloneBtn.setDisabled(False)
             elif radioButton.objectName() == 'noneBtn':
+                self.dispDict[self.currentDisplay].groupMode = 'none'
                 self.groupMode = 'none'
                 self.expColBtn.setDisabled(True)
                 self.cloneBtn.setDisabled(True)
-            self.loadTree(self.currentDisplay, self.groupMode)
+            self.loadTree(self.currentDisplay, self.dispDict[self.currentDisplay].groupMode)
             self.treeWidget.expandAll()
             self.expColBtn.setText("Collapse")
         if self.hideUncheckedOn:
@@ -777,7 +802,7 @@ class Ui_MainWindow(QMainWindow):
         field_count = 0
         selected_items = self.treeWidget.selectedItems()
         for tree_item in selected_items:
-            if tree_item.parent() or self.groupMode == 'none':
+            if tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
                 item_count += 1
                 newLine = self.dispDict[self.currentDisplay].romDict[tree_item.text(self.col_rom)].lstLine
                 extra = self.getLineField(newLine, 'Extra')
@@ -791,7 +816,7 @@ class Ui_MainWindow(QMainWindow):
         selected_items = self.treeWidget.selectedItems()
         for tree_item in selected_items:
             rom_name = tree_item.text(self.col_rom)
-            if tree_item.parent() or self.groupMode == 'none':
+            if tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
                 item_count += 1
                 if (column_name == 'locked'   and self.dispDict[self.currentDisplay].romDict[rom_name].locked   == col_value or
                         column_name == 'favorite' and self.dispDict[self.currentDisplay].romDict[rom_name].favorite == col_value or
@@ -800,13 +825,13 @@ class Ui_MainWindow(QMainWindow):
         return item_count, value_count
 
     def lockItem(self, tree_item):
-#        if tree_item.parent() or self.groupMode == 'none':
+#        if tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
         if tree_item.text(self.col_rom) != '':
             tree_item.setIcon(0, self.lockIcon)
             self.dispDict[self.currentDisplay].romDict[tree_item.text(self.col_rom)].locked = 'Y'
 
     def unlockItem(self, tree_item):
-#        if tree_item.parent() or self.groupMode == 'none':
+#        if tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
         if tree_item.text(self.col_rom) != '':
             tree_item.setIcon(0, self.unlockIcon)
             self.dispDict[self.currentDisplay].romDict[tree_item.text(self.col_rom)].locked = 'N'
@@ -814,7 +839,7 @@ class Ui_MainWindow(QMainWindow):
     def setSelectedLockStatus(self, status):
         selected_items = self.treeWidget.selectedItems()
         for tree_item in selected_items:
-            if tree_item.parent() or self.groupMode == 'none':
+            if tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
                 if status == 'lock':
                     self.lockItem(tree_item)
                 elif status == 'unlock':
@@ -847,7 +872,7 @@ class Ui_MainWindow(QMainWindow):
 
     def favoriteItem(self, tree_item):
         rom_name = tree_item.text(self.col_rom)
-        if (tree_item.parent() or self.groupMode == 'none')\
+        if (tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none')\
                 and self.dispDict[self.currentDisplay].romDict[rom_name].locked == 'N':
             tree_item.setIcon(self.col_favorite, self.starIcon)
             self.dispDict[self.currentDisplay].romDict[rom_name].favorite = 'Y'
@@ -856,7 +881,7 @@ class Ui_MainWindow(QMainWindow):
 
     def unfavoriteItem(self, tree_item):
         rom_name = tree_item.text(self.col_rom)
-        if (tree_item.parent() or self.groupMode == 'none')\
+        if (tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none')\
                 and self.dispDict[self.currentDisplay].romDict[rom_name].locked == 'N':
             tree_item.setIcon(self.col_favorite, self.blankIcon)
             self.dispDict[self.currentDisplay].romDict[rom_name].favorite = 'N'
@@ -866,7 +891,7 @@ class Ui_MainWindow(QMainWindow):
     def setSelectedFavoriteStatus(self, status):
         selected_items = self.treeWidget.selectedItems()
         for tree_item in selected_items:
-            if tree_item.parent() or self.groupMode == 'none':
+            if tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
                 if status == 'favorite':
                     self.favoriteItem(tree_item)
                 elif status == 'unfavorite':
@@ -918,7 +943,7 @@ class Ui_MainWindow(QMainWindow):
 
         s = ''
         for idx, tree_item in enumerate(selected_items):
-            if tree_item.parent() or self.groupMode == 'none':
+            if tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
                 if (status == 'selected'
                     or status == 'passed' and self.dispDict[self.currentDisplay].romDict[tree_item.text(self.col_rom)].status == 'pass'
                         or status == 'failed' and self.dispDict[self.currentDisplay].romDict[tree_item.text(self.col_rom)].status == 'fail'):
@@ -965,7 +990,7 @@ class Ui_MainWindow(QMainWindow):
     def setSelectedCheckStatus(self, status):
         selected_items = self.treeWidget.selectedItems()
         for tree_item in selected_items:
-            if (tree_item.parent() or self.groupMode == 'none')\
+            if (tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none')\
                     and self.dispDict[self.currentDisplay].romDict[tree_item.text(self.col_rom)].locked == 'N':
                 if status == 'check':
                     tree_item.setCheckState(0, Qt.Checked)
@@ -1181,7 +1206,7 @@ class Ui_MainWindow(QMainWindow):
             treeItem.setIcon(0, self.unlockIcon)
 
     def setFavoriteIcon(self, treeItem, romname):
-        if treeItem.parent() or self.groupMode == 'none':
+        if treeItem.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
             if self.dispDict[self.currentDisplay].romDict[romname].favorite == 'Y':
                 treeItem.setIcon(self.col_favorite, self.starIcon)
             else:
@@ -1208,7 +1233,7 @@ class Ui_MainWindow(QMainWindow):
 
     def setUpItem(self, treeItem, itemType, newTitle, variation, romname, cloneOf, status, emu, category):
         treeItem.setText(self.col_name, newTitle)
-        if self.groupMode == 'none' or itemType == 'child':
+        if self.dispDict[self.currentDisplay].groupMode == 'none' or itemType == 'child':
             treeItem.setText(self.col_variation, variation)
             treeItem.setText(self.col_rom, romname)
             treeItem.setText(self.col_cloneof, cloneOf)
@@ -1495,7 +1520,7 @@ class Ui_MainWindow(QMainWindow):
             root = self.treeWidget.invisibleRootItem()
             titleCount = root.childCount()
 
-            if self.groupMode == 'none':
+            if self.dispDict[self.currentDisplay].groupMode == 'none':
                 self.treeWidget.sortByColumn(self.col_name, Qt.AscendingOrder)
                 prevTitle = ''
                 prevIdx   = -1
@@ -1581,7 +1606,7 @@ class Ui_MainWindow(QMainWindow):
                     checked_cnt = 0
                     unchecked_cnt = 0
                     other_cnt = 0
-                    if self.groupMode == 'none':
+                    if self.dispDict[self.currentDisplay].groupMode == 'none':
                         if item.checkState(0) == QtCore.Qt.Checked:
                             checked_cnt += 1
                         else:
@@ -1646,6 +1671,7 @@ class Ui_MainWindow(QMainWindow):
             self.firstLoad = False
             self.loadTree(list(self.dispDict.keys())[0], 'parent')
             self.addMenu('Display', self.dispDict, self.loadDisplay)
+            self.setMenuIcons()
 
 
 if __name__ == "__main__":
