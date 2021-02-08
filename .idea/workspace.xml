@@ -4,6 +4,7 @@
     <list default="true" id="b4517a6c-0ceb-40c7-9a38-325443a0547f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AttractModeListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FindDialog.py" beforeDir="false" afterPath="$PROJECT_DIR$/FindDialog.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,7 +72,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/AttractModeListMgr.py</url>
-          <line>432</line>
+          <line>427</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
       </breakpoints>
@@ -82,6 +83,8 @@
         <watch expression="self.groupMode" />
         <watch expression="self.currentDisplay" />
         <watch expression="self.dispDict[displayName].groupMode" />
+        <watch expression="self.dispDict[self.currentDisplay].romDict[romname]" />
+        <watch expression="self.dispDict['Mame'].romDict['10yard'].favorite" language="Python" />
       </configuration>
     </watches-manager>
   </component>
