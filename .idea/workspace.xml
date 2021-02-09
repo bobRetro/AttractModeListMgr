@@ -3,8 +3,9 @@
   <component name="ChangeListManager">
     <list default="true" id="b4517a6c-0ceb-40c7-9a38-325443a0547f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AmConfig.py" beforeDir="false" afterPath="$PROJECT_DIR$/AmConfig.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AttractModeListMgr.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgr.cfg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AttractModeListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgr.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -75,6 +76,7 @@
         <watch expression="self.currentDisplay" />
         <watch expression="self.dispDict[displayName].groupMode" />
         <watch expression="self.dispDict[self.currentDisplay].romDict[romname]" />
+        <watch expression="self.dispDict['Mame'].dataChanged" language="Python" />
         <watch expression="self.dispDict['Mame'].romDict['10yard'].favorite" language="Python" />
         <watch expression="self.configData" />
       </configuration>
