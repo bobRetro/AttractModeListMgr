@@ -4,7 +4,6 @@
     <list default="true" id="b4517a6c-0ceb-40c7-9a38-325443a0547f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AttractModeListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgr.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FindDialog.py" beforeDir="false" afterPath="$PROJECT_DIR$/FindDialog.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,13 +67,20 @@
     <servers />
   </component>
   <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/AttractModeListMgr.py</url>
+          <line>982</line>
+          <option name="timeStamp" value="20" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
-        <watch expression="self.groupMode" />
-        <watch expression="self.currentDisplay" />
-        <watch expression="self.treeWidget.headerItem()" />
-        <watch expression="self.treeWidget" />
-        <watch expression="self.treeWidget.headerItem()" />
+        <watch expression="self.dispDict[listName].favList" />
+        <watch expression="self.dispDict['Atari 7800'].romDict['Alien Brigade (1990) (Atari)']" language="Python" />
+        <watch expression="self.dispDict['Atari 7800'].romDict['Alien Brigade (1990) (Atari)'].lineDict" language="Python" />
       </configuration>
     </watches-manager>
   </component>

@@ -140,6 +140,25 @@ def getMameVersion(mamePath):
     return str(ret.stdout)
 
 
+def newDisplayCfg(group_mode):
+    displayCfg = recordtype('displayCfg', [('cfgDict', {}),
+                                           ('filterDict', {}),
+                                           ('romDict', {}),
+                                           ('favList', []),
+                                           ('dataChanged', False),
+                                           ('groupMode', ''),
+                                           ('action', None),
+                                           ('clonesExist', False)
+                                           ])
+    displayCfg.cfgDict = dict()
+    displayCfg.romDict = dict()
+    displayCfg.favList = list()
+    displayCfg.cfgDict['validateExe'] = 'Unknown'
+    displayCfg.groupMode = group_mode
+
+    return displayCfg
+
+
 def loadAmConfig(fileToOpen):
     dispDict = dict()
     if os.path.exists(fileToOpen):
@@ -154,21 +173,9 @@ def loadAmConfig(fileToOpen):
             line = cfgList[i]
             lvl, dispKey, dispVal = getCfgLineKeyVal(line)
             if lvl == 0 and dispKey == 'display':
-                displayCfg = recordtype('displayCfg', [('cfgDict', {}),
-                                                       ('filterDict', {}),
-                                                       ('romDict', {}),
-                                                       ('favList', []),
-                                                       ('dataChanged', False),
-                                                       ('groupMode', 'parent'),
-                                                       ('action', None),
-                                                       ('clonesExist', False)
-                                                       ])
-                displayCfg.cfgDict = dict()
-                displayCfg.romDict = dict()
-                displayCfg.favList = list()
-                displayCfg.cfgDict['validateExe'] = 'Unknown'
-                displayCfg.groupMode = 'parent'
-                dispDict[dispVal] = displayCfg
+                displayCfg = newDisplayCfg('parent')
+                if dispVal != 'Favorites':
+                    dispDict[dispVal] = displayCfg
 
                 i = loadDisplayCfg(cfgList, displayCfg, i)
             i = i+1
@@ -355,6 +362,9 @@ class Ui_MainWindow(QMainWindow):
         self.openStarIcon = QtGui.QIcon("icons\\openStar.ico")
         self.passIcon = QtGui.QIcon("icons\\Iconsmind-Outline-Yes.ico")
         self.failIcon = QtGui.QIcon("icons\\error.ico")
+        self.searchIcon = QtGui.QIcon("icons\\Search2.ico")
+        self.gearIcon = QtGui.QIcon("icons\\Gear.ico")
+        self.mergeIcon = QtGui.QIcon("icons\\Merge.ico")
         self.blankIcon = QtGui.QIcon()
         self.findDlg = QtWidgets.QDialog()
         self.findUi = Ui_findDlg(parent=self)
@@ -417,34 +427,23 @@ class Ui_MainWindow(QMainWindow):
         # loadAct.triggered.connect(lambda: self.loadTree(self.currentDisplay,
         #   self.dispDict[self.currentDisplay].groupMode))
 
-        icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogSaveButton')))
+        self.saveIcon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogSaveButton')))
         
-        self.saveAct = QAction(icon, 'Save', self)
+        self.saveAct = QAction(self.saveIcon, 'Save', self)
         self.saveAct.setShortcut('Ctrl+S')
         self.saveAct.setStatusTip('Save File')
-        self.saveAct.triggered.connect(self.saveChangedLists)
+        self.saveAct.triggered.connect(self.saveChangedDisplays)
         self.saveAct.setEnabled(False)
 
-        saveFavAct = QAction(icon, 'Save Favorites', self)
-        saveFavAct.setStatusTip('Save Favorites.txt')
-        saveFavAct.triggered.connect(self.saveFavoritesTxt)
-
-        findAct = QAction(icon, 'Find', self)
-        findAct.setShortcut('Ctrl+F')
-        findAct.setStatusTip('Find')
-        findAct.triggered.connect(self.showFindDlg)
-
-        configAct = QAction(icon, 'Preferences', self)
-        configAct.setShortcut('Ctrl+P')
-        configAct.setStatusTip('Set Preferences')
-        configAct.triggered.connect(self.showPreferencesNoRsp)
+        # saveFavAct = QAction(icon, 'Save Favorites', self)
+        # saveFavAct.setStatusTip('Save Favorites.txt')
+        # saveFavAct.triggered.connect(lambda: self.saveDisplay('Favorites'))
 
         fileMenu = menubar.addMenu('&File')
-#        fileMenu.addAction(loadAct)
+        # fileMenu.addAction(loadAct)
         fileMenu.addAction(self.saveAct)
-        fileMenu.addAction(saveFavAct)
-        fileMenu.addAction(findAct)
-        fileMenu.addAction(configAct)
+        # fileMenu.addAction(saveFavAct)
+        # fileMenu.addAction(findAct)
         fileMenu.addAction(exitAct)
         fileMenu.aboutToShow.connect(self.updateFileMenu)
 
@@ -458,9 +457,27 @@ class Ui_MainWindow(QMainWindow):
         selPassedAct.setStatusTip('Select Passed')
         selPassedAct.triggered.connect(lambda: self.selectByStatus('pass'))
 
+        self.favoritesAct = QAction(self.mergeIcon, 'Merge Favorites', self)
+        self.favoritesAct.setStatusTip('Copy favorites from all displays to the Favorites display')
+        self.favoritesAct.triggered.connect(self.updateFavorites)
+
         editMenu = menubar.addMenu('&Edit')
-        editMenu.addAction(selFailedAct)
-        editMenu.addAction(selPassedAct)
+        configAct = QAction(self.gearIcon, 'Preferences', self)
+        configAct.setShortcut('Ctrl+P')
+        configAct.setStatusTip('Set Preferences')
+        configAct.triggered.connect(self.showPreferencesNoRsp)
+        editMenu.addAction(configAct)
+
+        findAct = QAction(self.searchIcon, 'Find', self)
+        findAct.setShortcut('Ctrl+F')
+        findAct.setStatusTip('Find')
+        findAct.triggered.connect(self.showFindDlg)
+        editMenu.addAction(findAct)
+
+        favMenu = menubar.addMenu('&Favorites')
+        favMenu.addAction(self.favoritesAct)
+        # editMenu.addAction(selFailedAct)
+        # editMenu.addAction(selPassedAct)
 
         self.treeWidget.setSortingEnabled(True)
         self.retranslateUi()
@@ -631,7 +648,7 @@ class Ui_MainWindow(QMainWindow):
     def dataChanged(self):
         if len(self.dispDict) > 0:
             for d in self.dispDict.keys():
-                if self.dispDict[d].dataChanged:
+                if d != 'Favorites' and self.dispDict[d].dataChanged:
                     return True
         return False
 
@@ -709,6 +726,7 @@ class Ui_MainWindow(QMainWindow):
 
             self.treeWidget.sortByColumn(self.col_idx['Title'], Qt.AscendingOrder)
             self.setMenuIcons()
+            self.updateWinTitle()
 
     def closeProgram(self):
         self.close()
@@ -746,11 +764,32 @@ class Ui_MainWindow(QMainWindow):
     def updateFileMenu(self):
         if self.dataChanged():
             self.saveAct.setEnabled(True)
+        if 'Favorites' in self.dispDict.keys():
+            if self.dispDict['Favorites'].dataChanged:
+                self.favoritesAct.setEnabled(True)
+            else:
+                self.favoritesAct.setEnabled(False)
+        else:
+            self.favoritesAct.setText('Merge Favorites')
+            self.favoritesAct.setEnabled(True)
+
+    def updateWinTitle(self):
+        title = 'AttractMode List Manager'
+        if self.dataChanged():
+            title = '* '+title
+        if self.dispDict[self.currentDisplay].dataChanged:
+            title += ' - * '+self.currentDisplay
+        else:
+            title += ' - '+self.currentDisplay
+
+        self.setWindowTitle(QtCore.QCoreApplication.translate("MainWindow", title))
 
     def treeItemChanged(self, item, column):
         if not self.treeLoading:
             self.dispDict[self.currentDisplay].dataChanged = True
-            MainWindow.setWindowTitle(QtCore.QCoreApplication.translate("MainWindow", self.windowTitle+' *'))
+            self.updateWinTitle()
+            self.updateFileMenu()
+            # self.setWindowTitle(QtCore.QCoreApplication.translate("MainWindow", self.windowTitle+' *'))
             if item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
                 newLine = self.getTreeItemLineDictVal(item, 'LstLine')
 
@@ -834,26 +873,34 @@ class Ui_MainWindow(QMainWindow):
         value_count = 0
         selected_items = self.treeWidget.selectedItems()
         for tree_item in selected_items:
-            if ((tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none')
-                and
-                (col_value == 'locked' or self.getTreeItemLineDictVal(tree_item, 'Locked') == 'N')
-            ):
-                item_count += 1
-                if self.currentDisplay != 'Favorites':
-                    if (
-                            (column_name == 'checked'
-                             and (tree_item.checkState(self.col_idx['Title']) == QtCore.Qt.Checked) == col_value)
-                            or
-                            (column_name == 'locked'
-                             and self.getTreeItemLineDictVal(tree_item, 'Locked') == col_value)
-                            or
-                            (column_name == 'favorite'
-                             and self.getTreeItemLineDictVal(tree_item, 'Favorite') == col_value)
-                            or
-                            (column_name == 'status'
-                             and self.getTreeItemLineDictVal(tree_item, 'Status') == col_value)
-                    ):
-                        value_count += 1
+            if tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
+                if self.currentDisplay == 'Favorites':
+                    emu = self.getTreeItemLineDictVal(tree_item, 'Emulator')
+                    rom_name = self.getTreeItemLineDictVal(tree_item, 'Name')
+                    if emu in self.dispDict.keys():
+                        emuDisp = self.dispDict[emu]
+                        if rom_name in emuDisp.romDict.keys():
+                            if column_name == 'favorite' and emuDisp.romDict[rom_name].lineDict['Locked'] == 'N':
+                                item_count += 1
+                                # if self.getTreeItemLineDictVal(tree_item, 'Favorite') == col_value:
+                                #     value_count += 1
+                elif column_name == 'locked' or self.getTreeItemLineDictVal(tree_item, 'Locked') == 'N':
+                    item_count += 1
+                    if self.currentDisplay != 'Favorites':
+                        if (
+                                (column_name == 'checked'
+                                 and (tree_item.checkState(self.col_idx['Title']) == QtCore.Qt.Checked) == col_value)
+                                or
+                                (column_name == 'locked'
+                                 and self.getTreeItemLineDictVal(tree_item, 'Locked') == col_value)
+                                or
+                                (column_name == 'favorite'
+                                 and self.getTreeItemLineDictVal(tree_item, 'Favorite') == col_value)
+                                or
+                                (column_name == 'status'
+                                 and self.getTreeItemLineDictVal(tree_item, 'Status') == col_value)
+                        ):
+                            value_count += 1
         return item_count, value_count
 
     def setItemLocked(self, tree_item, isLocked):
@@ -879,7 +926,7 @@ class Ui_MainWindow(QMainWindow):
 
     def setLockedContextMenu(self, menu, point):
         name = ""
-        item_count, locked_count = self.getSelectedColValueCount('locked', 'N')
+        item_count, locked_count = self.getSelectedColValueCount('locked', 'Y')
 
         if item_count > 0:
             if item_count == 1:
@@ -890,12 +937,12 @@ class Ui_MainWindow(QMainWindow):
                 action.triggered.connect(functools.partial(self.setSelectedLockStatus, 'toggle'))
 
             if locked_count > 0:
-                action = menu.addAction("Lock"+name)
-                action.triggered.connect(functools.partial(self.setSelectedLockStatus, 'lock'))
-
-            if locked_count < item_count:
                 action = menu.addAction("Unlock"+name)
                 action.triggered.connect(functools.partial(self.setSelectedLockStatus, 'unlock'))
+
+            if locked_count < item_count:
+                action = menu.addAction("Lock"+name)
+                action.triggered.connect(functools.partial(self.setSelectedLockStatus, 'lock'))
 
     def setItemFavorite(self, tree_item, isFavorite):
         display = self.dispDict[self.currentDisplay]
@@ -929,6 +976,10 @@ class Ui_MainWindow(QMainWindow):
                                 root = self.treeWidget.invisibleRootItem()
                                 for item in results:
                                     root.removeChild(item)
+                                if len(results) > 0:
+                                    self.dispDict['Favorites'].dataChanged = True
+                                    self.updateWinTitle()
+                                    self.updateFileMenu()
                 else:
                     if 'Favorites' in self.dispDict.keys():
                         favDisp = self.dispDict['Favorites']
@@ -936,11 +987,15 @@ class Ui_MainWindow(QMainWindow):
                             if rom_name in favDisp.romDict.keys():
                                 favDisp.romDict.pop(rom_name)
                                 favDisp.dataChanged = True
+                                self.updateWinTitle()
+                                self.updateFileMenu()
                         else:
                             if rom_name not in favDisp.romDict.keys():
                                 favDisp.romDict[rom_name] = recordtype('romItem', [('lineDict', {})])
                                 favDisp.romDict[rom_name].lineDict = dict(display.romDict[rom_name].lineDict)
                                 favDisp.dataChanged = True
+                                self.updateWinTitle()
+                                self.updateFileMenu()
 
     def setSelectedFavoriteStatus(self, status):
         selected_items = self.treeWidget.selectedItems()
@@ -1207,6 +1262,33 @@ class Ui_MainWindow(QMainWindow):
                             newLine += ';unknown'
                         of.write(newLine+'\n')
 
+    def updateFavorites(self):
+        if self.favoritesAct.text() == 'Save':
+            self.saveDisplay('Favorites')
+        else:
+            favAction = None
+            if 'Favorites' in self.dispDict.keys():
+                favAction = self.dispDict['Favorites'].action
+                self.dispDict.pop('Favorites')
+                self.dispDict['Favorites'] = newDisplayCfg('none')
+            else:
+                self.dispDict['Favorites'] = newDisplayCfg('none')
+                self.addMenu('Display', self.dispDict, self.loadDisplay)
+
+            if favAction is not None:
+                self.dispDict['Favorites'].action = favAction
+
+            for dispName, disp in self.dispDict.items():
+                if dispName != 'Favorites':
+                    for rom_name, rom_item in disp.romDict.items():
+                        if rom_item.lineDict['Favorite'] == 'Y':
+                            self.dispDict['Favorites'].romDict[rom_name] = self.romItem(lineDict=rom_item.lineDict)
+
+            self.loadDisplay('Favorites')
+            self.favoritesAct.setText('Save')
+            self.favoritesAct.setIcon(self.saveIcon)
+        self.updateFileMenu()
+
     def saveFavoritesTxt(self):
         favList = list()
         favDisp = None
@@ -1231,21 +1313,32 @@ class Ui_MainWindow(QMainWindow):
                 for romItem in sorted(favList, key=lambda kv: kv.lineDict['Title']):
                     of.write(romItem.lineDict['LstLine']+'\n')
 
-    def saveChangedLists(self):
+    def saveDisplay(self, dispName):
+        if self.dispDict[dispName].dataChanged and len(self.dispDict[dispName].romDict) > 0:
+            fileToOpen = os.path.join(self.prefs.amDir, "romlists\\" + dispName + ".txt")
+            with open(fileToOpen, "w") as of:
+                of.write(self.fileHeader)
+                for romItem in sorted(self.dispDict[dispName].romDict.values(), key=lambda kv: kv.lineDict['Title']):
+                    of.write(romItem.lineDict['LstLine'] + '\n')
+            self.saveAlm(dispName)
+            self.saveTag(dispName)
+            self.dispDict[dispName].dataChanged = False
+            print('Saved ' + dispName + ' to ' + fileToOpen)
+            if dispName == 'Favorites':
+                if self.dataChanged():
+                    self.saveAct.setEnabled(False)
+                self.updateWinTitle()
+                self.updateFileMenu()
+
+    def saveChangedDisplays(self):
         try:
             for d in self.dispDict.keys():
                 if self.dispDict[d].dataChanged and len(self.dispDict[d].romDict) > 0:
-                    fileToOpen = os.path.join(self.prefs.amDir, "romlists\\"+d+".txt")
-                    with open(fileToOpen, "w") as of:
-                        of.write(self.fileHeader)
-                        for romItem in sorted(self.dispDict[d].romDict.values(), key=lambda kv: kv.lineDict['Title']):
-                            of.write(romItem.lineDict['LstLine']+'\n')
-                    self.saveAlm(d)
-                    self.saveTag(d)
-                    self.dispDict[d].dataChanged = False
-                    self.saveAct.setEnabled(False)
-                    print('Saved '+d+' to '+fileToOpen)
-            MainWindow.setWindowTitle(QtCore.QCoreApplication.translate("MainWindow", self.windowTitle))
+                    self.saveDisplay(d)
+
+            self.saveAct.setEnabled(False)
+            self.updateWinTitle()
+            self.updateFileMenu()
 
         except Exception as saveListExcept:
             traceback.print_exc()
@@ -1270,7 +1363,8 @@ class Ui_MainWindow(QMainWindow):
             if self.currentDisplay == 'Favorites':
                 tree_item.setIcon(self.col_idx['Favorite'], self.blankIcon)
             else:
-                if self.getTreeItemLineDictVal(tree_item, 'Favorite') == 'Y':
+                # if self.getTreeItemLineDictVal(tree_item, 'Favorite') == 'Y':
+                if self.dispDict[self.currentDisplay].romDict[self.getTreeItemLineDictVal(tree_item, 'Name')].lineDict['Favorite'] == 'Y':
                     tree_item.setIcon(self.col_idx['Favorite'], self.starIcon)
                 else:
                     tree_item.setIcon(self.col_idx['Favorite'], self.blankIcon)
@@ -1430,9 +1524,9 @@ class Ui_MainWindow(QMainWindow):
                     elif mode == 'title':
                         if level == 'parent':
                             if newTitle not in self.parentTitleDict:
+                                treeItem = self.addParent(mode, lineDict)
                                 for k in {'Variation', 'CloneOf', 'Favorite'}:
-                                    lineDict[k] = ''
-                                self.addParent(mode, lineDict)
+                                    treeItem.setText(self.col_idx[k], '')
                         else:
                             gameIdx = self.parentTitleDict[newTitle]
                             treeItem = self.treeWidget.topLevelItem(gameIdx)
@@ -1492,7 +1586,7 @@ class Ui_MainWindow(QMainWindow):
                             line = fp.readline()
                             continue
 
-                        lineDict = {'Status': 'Unknown', 'Favorite': 'N', 'Locked': '', 'Excluded': 'N', 'LstLine': ''}
+                        lineDict = {'Status': 'Unknown', 'Favorite': 'N', 'Locked': 'N', 'Excluded': 'N', 'LstLine': ''}
                         wordlist = line.strip('\n\r').split(';')
                         for k in self.col_idx.keys():
                             if k in self.listHeaderIdx.keys():
@@ -1545,11 +1639,8 @@ class Ui_MainWindow(QMainWindow):
                             while line:
                                 almFields = line.split(';')
                                 if almFields[0] in self.dispDict[listName].romDict:
-                                    # self.dispDict[listName].romDict[almFields[0]].excluded = almFields[1]
                                     self.dispDict[listName].romDict[almFields[0]].lineDict['Excluded'] = almFields[1]
-                                    # self.dispDict[listName].romDict[almFields[0]].locked = almFields[2]
                                     self.dispDict[listName].romDict[almFields[0]].lineDict['Locked'] = almFields[2]
-                                    # self.dispDict[listName].romDict[almFields[0]].status = almFields[3]
                                     self.dispDict[listName].romDict[almFields[0]].lineDict['Status'] = almFields[3]
                                 else:
                                     self.dispDict[listName].romDict[almFields[0]] = self.romItem(excluded=almFields[1],
@@ -1758,10 +1849,10 @@ class Ui_MainWindow(QMainWindow):
             rsp = self.showPreferences()
         if len(self.dispDict) > 0:
             for disp in self.dispDict.keys():
-                self.loadList(disp)
-                self.dispDict[disp].clonesExist = False
-
                 if disp != 'Favorites':
+                    self.loadList(disp)
+                    self.dispDict[disp].clonesExist = False
+
                     for item in self.dispDict[disp].romDict.values():
                         if item.lineDict['CloneOf'] != '':
                             self.dispDict[disp].clonesExist = True
@@ -1772,6 +1863,8 @@ class Ui_MainWindow(QMainWindow):
             self.loadTree(list(self.dispDict.keys())[0], 'parent')
             self.addMenu('Display', self.dispDict, self.loadDisplay)
             self.setMenuIcons()
+            self.updateWinTitle()
+            self.updateFileMenu()
 
 
 if __name__ == "__main__":
