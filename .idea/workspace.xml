@@ -71,7 +71,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/AttractModeListMgr.py</url>
-          <line>982</line>
+          <line>984</line>
           <option name="timeStamp" value="20" />
         </line-breakpoint>
       </breakpoints>

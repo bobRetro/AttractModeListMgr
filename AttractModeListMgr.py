@@ -648,7 +648,7 @@ class Ui_MainWindow(QMainWindow):
     def dataChanged(self):
         if len(self.dispDict) > 0:
             for d in self.dispDict.keys():
-                if d != 'Favorites' and self.dispDict[d].dataChanged:
+                if self.dispDict[d].dataChanged:
                     return True
         return False
 
@@ -762,7 +762,8 @@ class Ui_MainWindow(QMainWindow):
         self.findDupButton.setText(_translate("MainWindow", "Find Duplicates"))
 
     def updateFileMenu(self):
-        if self.dataChanged():
+        changedList = self.getChangedDispList()
+        if len(changedList) > 0 and not (len(changedList) == 1 and 'Favorites' in changedList):
             self.saveAct.setEnabled(True)
         if 'Favorites' in self.dispDict.keys():
             if self.dispDict['Favorites'].dataChanged:
