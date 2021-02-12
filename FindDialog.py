@@ -56,6 +56,9 @@ class Ui_findDlg(object):
         self.fieldComboBox.addItem('Buttons')
         self.fieldComboBox.addItem('Manufacturer')
         self.fieldComboBox.addItem('Year')
+        self.fieldComboBox.addItem('Favorite (Y or N)')
+        self.fieldComboBox.addItem('Status (pass or fail)')
+        self.fieldComboBox.addItem('Locked (Y or N)')
 
         self.fieldLabel = QtWidgets.QLabel(findDlg)
         self.fieldLabel.setGeometry(QtCore.QRect(10, 13, 31, 16))
