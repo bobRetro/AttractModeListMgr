@@ -2,3 +2,4 @@
 test.yp.py
 *.pyc
 dist
+build
