@@ -3,7 +3,12 @@
   <component name="ChangeListManager">
     <list default="true" id="b4517a6c-0ceb-40c7-9a38-325443a0547f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AmConfig.py" beforeDir="false" afterPath="$PROJECT_DIR$/AmConfig.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AttractModeListMgr.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgr.cfg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AttractModeListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AttractModeListMgrWindow.ui" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgrWindow.ui" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/documentation/AttractMode List Manager.docx" beforeDir="false" afterPath="$PROJECT_DIR$/documentation/AttractMode List Manager.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/window.py" beforeDir="false" afterPath="$PROJECT_DIR$/window.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,7 +76,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/AttractModeListMgr.py</url>
-          <line>984</line>
+          <line>988</line>
           <option name="timeStamp" value="20" />
         </line-breakpoint>
       </breakpoints>
@@ -81,6 +86,7 @@
         <watch expression="self.dispDict[listName].favList" />
         <watch expression="self.dispDict['Atari 7800'].romDict['Alien Brigade (1990) (Atari)']" language="Python" />
         <watch expression="self.dispDict['Atari 7800'].romDict['Alien Brigade (1990) (Atari)'].lineDict" language="Python" />
+        <watch expression="len(self.dispDict)" />
       </configuration>
     </watches-manager>
   </component>

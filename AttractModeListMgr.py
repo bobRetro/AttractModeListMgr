@@ -91,7 +91,7 @@ def getTitleVariation(title):
                 newBegIdx = i
                 endIdx = -1
     if newBegIdx > 0:
-        newTitle = title[0:newBegIdx-1].strip()
+        newTitle = title[0:newBegIdx].strip()
     newTitle = newTitle.split('/')[0].strip()
     return newTitle, var
 
@@ -313,6 +313,8 @@ class Ui_MainWindow(QMainWindow):
         self.gridLayout.addWidget(self.findDupButton, 1, 9, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout.addItem(spacerItem, 1, 8, 1, 1)
+        spacerItem1 = QtWidgets.QSpacerItem(100, 0, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.gridLayout.addItem(spacerItem1, 2, 1, 1, 5)
         self.frame = QtWidgets.QFrame(self.centralwidget)
         self.frame.setEnabled(True)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
@@ -633,10 +635,12 @@ class Ui_MainWindow(QMainWindow):
         rsp = self.configDialog.exec_()
         if rsp == QDialog.Accepted:
             if self.prefs.amDir != self.configUi.amDir.text() or self.prefs.mameExe != self.configUi.mameExe.text():
-                self.loadPrefs()
+                # self.loadPrefs()
                 self.prefs.amDir = self.configUi.amDir.text()
                 self.prefs.mameExe = self.configUi.mameExe.text()
+                print('Saving '+self.prefs.amDir+' '+self.configUi.mameExe.text())
                 self.prefs.saveJSON(self.prefsFile)
+                self.configDialog.close()
         else:
             self.configUi.amDir.setText(currAmDir)
             self.configUi.mameExe.setText(currMameExe)
@@ -1399,7 +1403,7 @@ class Ui_MainWindow(QMainWindow):
         if self.dispDict[self.currentDisplay].groupMode == 'none' or itemType == 'child':
             for k in self.col_idx.keys():
                 col = k.split('(')[0].strip()
-                if col not in ['Title', 'Status', 'Favorite']:
+                if k not in ['Title', 'Status', 'Favorite']:
                     if col in lineDict.keys():
                         treeItem.setText(self.col_idx[k], lineDict[col])
 
@@ -1470,6 +1474,7 @@ class Ui_MainWindow(QMainWindow):
         if len(self.dispDict[self.currentDisplay].romDict) == 0:
             return
 
+        self.treeWidget.setHidden(True)
         self.treeWidget.clear()
         app.processEvents()
 
@@ -1553,6 +1558,7 @@ class Ui_MainWindow(QMainWindow):
         self.treeWidget.setColumnWidth(self.col_idx['Status'], 50)
         self.treeWidget.expandAll()
         self.expColBtn.setText("Collapse")
+        self.treeWidget.setHidden(False)
         app.processEvents()
         print('Loaded tree from '+listName)
 
@@ -1643,9 +1649,7 @@ class Ui_MainWindow(QMainWindow):
                                     self.dispDict[listName].romDict[almFields[0]].lineDict['Excluded'] = almFields[1]
                                     self.dispDict[listName].romDict[almFields[0]].lineDict['Locked'] = almFields[2]
                                     self.dispDict[listName].romDict[almFields[0]].lineDict['Status'] = almFields[3]
-                                else:
-                                    self.dispDict[listName].romDict[almFields[0]] = self.romItem(excluded=almFields[1],
-                                                                                                 locked=almFields[2])
+
                                 line = fp.readline().strip('\n')
 
             print('Loaded list '+listName)
@@ -1848,6 +1852,8 @@ class Ui_MainWindow(QMainWindow):
         rsp = QDialog.Accepted
         while rsp == QDialog.Accepted and len(self.dispDict) == 0:
             rsp = self.showPreferences()
+            if rsp == QDialog.Accepted:
+                self.loadPrefs()
         if len(self.dispDict) > 0:
             for disp in self.dispDict.keys():
                 if disp != 'Favorites':

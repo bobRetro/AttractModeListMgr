@@ -1,0 +1,1 @@
+pyinstaller --add-data icons;icons --add-data LICENSE;. --add-data README.md;. AttractModeListMgr.py
