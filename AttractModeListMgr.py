@@ -6,9 +6,12 @@ import functools
 import win32api
 
 
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.Qt import *
-from PyQt5.QtWidgets import QTreeWidgetItem
+# from PyQt5 import QtCore, QtGui, QtWidgets
+# from PyQt5.Qt import *
+from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtCore import Qt
+
+from PyQt5.QtWidgets import QStyle, QMenu, QAction, QDialog, QMessageBox, QMainWindow, QFileDialog, QTreeWidgetItem
 
 from ProgressDialog import ProgressDialog
 from ConfigDialog import Ui_configDialog
@@ -1369,7 +1372,9 @@ class Ui_MainWindow(QMainWindow):
                 tree_item.setIcon(self.col_idx['Favorite'], self.blankIcon)
             else:
                 # if self.getTreeItemLineDictVal(tree_item, 'Favorite') == 'Y':
-                if self.dispDict[self.currentDisplay].romDict[self.getTreeItemLineDictVal(tree_item, 'Name')].lineDict['Favorite'] == 'Y':
+                if self.dispDict[self.currentDisplay].\
+                        romDict[self.getTreeItemLineDictVal(tree_item, 'Name')].\
+                        lineDict['Favorite'] == 'Y':
                     tree_item.setIcon(self.col_idx['Favorite'], self.starIcon)
                 else:
                     tree_item.setIcon(self.col_idx['Favorite'], self.blankIcon)
