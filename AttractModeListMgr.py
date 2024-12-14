@@ -2,18 +2,11 @@ import traceback
 import subprocess
 import os.path
 import functools
-from contextlib import nullcontext
-
 import win32api
 
-
-# from PyQt5 import QtCore, QtGui, QtWidgets
-# from PyQt5.Qt import *
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import Qt
-
 from PyQt5.QtWidgets import QStyle, QMenu, QAction, QDialog, QMessageBox, QMainWindow, QFileDialog, QTreeWidgetItem
-
 from ProgressDialog import ProgressDialog
 from ConfigDialog import Ui_configDialog
 from AmConfig import AmConfig
@@ -42,12 +35,9 @@ def showMsg(windowTitle, message):
     try:
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
-
         msg.setText(message)
-#            msg.setInformativeText("This is additional information")
         msg.setWindowTitle(windowTitle)
         msg.setStandardButtons(QMessageBox.Ok)
-#            msg.buttonClicked.connect(self.msgbtn)
 
         retval = msg.exec_()
         return retval
@@ -131,11 +121,6 @@ def addFieldVal(field, val):
     if val not in valList:
         newField = addDelimitedItem(newField, val, ",")
     return newField
-
-# class AlignDelegate(QtWidgets.QStyledItemDelegate):
-#     def initStyleOption(self, option, index):
-#         super(AlignDelegate, self).initStyleOption(option, index)
-#         option.displayAlignment = QtCore.Qt.AlignCenter
 
 
 def getMameVersion(mamePath):
@@ -234,6 +219,30 @@ def getMameExeVersion(mameSrc, mameExe, mameDisp):
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
+    fileHeader = str()
+    romItem = recordtype('romItem', [('lineDict', {})])
+    listHeaderIdx = dict()
+    parentCloneOfDict = dict()
+    parentTitleDict = dict()
+    dispDict = dict()
+    emuDict = dict()
+    resultItems = list()
+    searchOn = False
+    findText = ''
+    findField = ''
+    hideUncheckedOn = False
+    currentDisplay = ''
+    windowTitle = "AttractMode List Manager"
+
+    prefs = AmConfig()
+    prefsFile = 'AttractModeListMgr.cfg'
+    groupMode = 'parent'
+    mameCfg = recordtype('mameCfg', [('rompath', ''), ('workdir', ''), ('executable', '')])
+
+    firstLoad = True
+    treeLoading = False
+    listName = "Mame"
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
@@ -241,10 +250,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.MyMessage = QtWidgets.QLabel()
         self.setStatusBar(self.statusbar)
         self.statusbar.addPermanentWidget(self.MyMessage)
-
         self.treeWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.treeWidget.customContextMenuRequested.connect(self.menuContextTree)
+        self.setIcons()
+        self.createDialogs()
+        self.configColumns()
+        self.parentBtn.setChecked(True)
+        self.connectSignalsSlots()
+        self.configMenu()
 
+    def setIcons(self):
         self.lockIcon = QtGui.QIcon("icons\\lock.ico")
         self.unlockIcon = QtGui.QIcon("icons\\unlock.ico")
         self.starIcon = QtGui.QIcon("icons\\star.ico")
@@ -255,16 +270,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.gearIcon = QtGui.QIcon("icons\\Gear.ico")
         self.mergeIcon = QtGui.QIcon("icons\\Merge.ico")
         self.blankIcon = QtGui.QIcon()
+
+    def createDialogs(self):
         self.findDlg = QtWidgets.QDialog()
         self.findUi = Ui_findDlg(parent=self)
         self.findUi.setupUi(self.findDlg)
-
         self.configDialog = QtWidgets.QDialog()
         self.configUi = Ui_configDialog(parent=self)
         self.configUi.setupUi(self.configDialog)
 
-        self.connectSignalsSlots()
-
+    def configColumns(self):
         self.column_headers = ['Title', 'Favorite', 'Status', 'Variation', 'Rotation', 'Category', 'Emulator',
                                'Control', 'Buttons', 'Players', 'Name', 'CloneOf',
                                'Status (pass or fail)', 'Favorite (Y or N)', 'Locked (Y or N)']
@@ -282,24 +297,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.treeWidget.hideColumn(self.col_idx['Favorite (Y or N)'])
         self.treeWidget.hideColumn(self.col_idx['Locked (Y or N)'])
 
-        # print(self.headerView.visualIndex(1))
-        # delegate = AlignDelegate(self.treeWidget)
-        # self.treeWidget.setItemDelegateForColumn(0, delegate)
-
+    def connectSignalsSlots(self):
         self.cloneBtn.clicked.connect(self.unselectClones)
         self.expColBtn.clicked.connect(self.expColTree)
-        self.parentBtn.setChecked(True)
         self.parentBtn.toggled.connect(self.toggleParentMode)
         self.titleBtn.toggled.connect(self.toggleParentMode)
         self.noneBtn.toggled.connect(self.toggleParentMode)
         self.clearSearchBtn.clicked.connect(self.clearSearch)
         self.uncheckedBtn.clicked.connect(self.toggleUncheckedHidden)
         self.findDupButton.clicked.connect(self.findDuplicates)
-
         self.treeWidget.itemChanged[QTreeWidgetItem, int].connect(self.treeItemChanged)
 
-        #        self.treeWidget.itemSelectionChanged.connect(self.treeItemSelected)
-
+    def configMenu(self):
         menubar = self.menuBar()
         style = self.style()
         icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_BrowserStop')))
@@ -307,13 +316,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         exitAct.setShortcut('Ctrl+Q')
         exitAct.setStatusTip('Exit application')
         exitAct.triggered.connect(self.closeProgram)
-
-        # icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogOpenButton')))
-        # loadAct = QAction(icon, 'Load', self)
-        # loadAct.setShortcut('Ctrl+L')
-        # loadAct.setStatusTip('Load File')
-        # loadAct.triggered.connect(lambda: self.loadTree(self.currentDisplay,
-        #   self.dispDict[self.currentDisplay].groupMode))
 
         self.saveIcon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogSaveButton')))
 
@@ -323,15 +325,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.saveAct.triggered.connect(self.saveChangedDisplays)
         self.saveAct.setEnabled(False)
 
-        # saveFavAct = QAction(icon, 'Save Favorites', self)
-        # saveFavAct.setStatusTip('Save Favorites.txt')
-        # saveFavAct.triggered.connect(lambda: self.saveDisplay('Favorites'))
-
         fileMenu = menubar.addMenu('&File')
-        # fileMenu.addAction(loadAct)
         fileMenu.addAction(self.saveAct)
-        # fileMenu.addAction(saveFavAct)
-        # fileMenu.addAction(findAct)
         fileMenu.addAction(exitAct)
         fileMenu.aboutToShow.connect(self.updateFileMenu)
 
@@ -364,163 +359,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         favMenu = menubar.addMenu('&Favorites')
         favMenu.addAction(self.favoritesAct)
-        # editMenu.addAction(selFailedAct)
-        # editMenu.addAction(selPassedAct)
 
         self.treeWidget.setSortingEnabled(True)
         self.retranslateUi(self)
-
-        # QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-    def connectSignalsSlots(self):
-        return
-
-    fileHeader = str()
-    romItem = recordtype('romItem', [('lineDict', {})])
-    listHeaderIdx = dict()
-    parentCloneOfDict = dict()
-    parentTitleDict = dict()
-    dispDict = dict()
-    emuDict = dict()
-    resultItems = list()
-    searchOn = False
-    findText = ''
-    findField = ''
-    hideUncheckedOn = False
-    currentDisplay = ''
-    windowTitle = "AttractMode List Manager"
-
-#    favList = list()
-    prefs = AmConfig()
-    prefsFile = 'AttractModeListMgr.cfg'
-    groupMode = 'parent'
-    mameCfg = recordtype('mameCfg', [('rompath', ''), ('workdir', ''), ('executable', '')])
-
-    firstLoad = True
-    treeLoading = False
-    listName = "Mame"
-
-    def _windowLayout(self):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(906, 525)
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
-        self.gridLayout.setObjectName("gridLayout")
-        self.clearSearchBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.clearSearchBtn.sizePolicy().hasHeightForWidth())
-        self.clearSearchBtn.setSizePolicy(sizePolicy)
-        self.clearSearchBtn.setObjectName("clearSearchBtn")
-        self.gridLayout.addWidget(self.clearSearchBtn, 1, 10, 1, 1)
-        self.treeWidget = QtWidgets.QTreeWidget(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(2)
-        sizePolicy.setHeightForWidth(self.treeWidget.sizePolicy().hasHeightForWidth())
-        self.treeWidget.setSizePolicy(sizePolicy)
-        self.treeWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.treeWidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        self.treeWidget.setColumnCount(4)
-        self.treeWidget.setObjectName("treeWidget")
-        self.treeWidget.headerItem().setText(0, "1")
-        self.treeWidget.headerItem().setText(1, "2")
-        self.treeWidget.headerItem().setText(2, "3")
-        self.treeWidget.headerItem().setText(3, "4")
-        self.gridLayout.addWidget(self.treeWidget, 4, 0, 1, 11)
-        self.cloneBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.cloneBtn.sizePolicy().hasHeightForWidth())
-        self.cloneBtn.setSizePolicy(sizePolicy)
-        self.cloneBtn.setObjectName("cloneBtn")
-        self.gridLayout.addWidget(self.cloneBtn, 1, 7, 1, 1)
-        self.uncheckedBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.uncheckedBtn.sizePolicy().hasHeightForWidth())
-        self.uncheckedBtn.setSizePolicy(sizePolicy)
-        self.uncheckedBtn.setObjectName("uncheckedBtn")
-        self.gridLayout.addWidget(self.uncheckedBtn, 1, 6, 1, 1)
-        self.expColBtn = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.expColBtn.sizePolicy().hasHeightForWidth())
-        self.expColBtn.setSizePolicy(sizePolicy)
-        self.expColBtn.setObjectName("expColBtn")
-        self.gridLayout.addWidget(self.expColBtn, 1, 5, 1, 1)
-        self.findDupButton = QtWidgets.QPushButton(self.centralwidget)
-        self.findDupButton.setObjectName("findDupButton")
-        self.gridLayout.addWidget(self.findDupButton, 1, 9, 1, 1)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout.addItem(spacerItem, 1, 8, 1, 1)
-        spacerItem1 = QtWidgets.QSpacerItem(100, 0, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem1, 2, 1, 1, 5)
-        self.frame = QtWidgets.QFrame(self.centralwidget)
-        self.frame.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
-        self.frame.setSizePolicy(sizePolicy)
-        self.frame.setMinimumSize(QtCore.QSize(300, 30))
-        self.frame.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.frame.setFrameShape(QtWidgets.QFrame.Panel)
-        self.frame.setFrameShadow(QtWidgets.QFrame.Plain)
-        self.frame.setLineWidth(1)
-        self.frame.setMidLineWidth(1)
-        self.frame.setObjectName("frame")
-        self.label = QtWidgets.QLabel(self.frame)
-        self.label.setGeometry(QtCore.QRect(10, 0, 58, 28))
-        self.label.setObjectName("label")
-        self.parentBtn = QtWidgets.QRadioButton(self.frame)
-        self.parentBtn.setGeometry(QtCore.QRect(80, 6, 56, 17))
-        self.parentBtn.setObjectName("parentBtn")
-        self.titleBtn = QtWidgets.QRadioButton(self.frame)
-        self.titleBtn.setGeometry(QtCore.QRect(160, 6, 44, 17))
-        self.titleBtn.setObjectName("titleBtn")
-        self.noneBtn = QtWidgets.QRadioButton(self.frame)
-        self.noneBtn.setGeometry(QtCore.QRect(230, 6, 61, 17))
-        self.noneBtn.setObjectName("noneBtn")
-        self.gridLayout.addWidget(self.frame, 1, 1, 1, 4)
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 906, 26))
-        self.menubar.setObjectName("menubar")
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
-
-        self.MyMessage = QtWidgets.QLabel()
-        MainWindow.setStatusBar(self.statusbar)
-        self.statusbar.addPermanentWidget(self.MyMessage)
-
-        self.treeWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.treeWidget.customContextMenuRequested.connect(self.menuContextTree)
-
-        self.lockIcon = QtGui.QIcon("icons\\lock.ico")
-        self.unlockIcon = QtGui.QIcon("icons\\unlock.ico")
-        self.starIcon = QtGui.QIcon("icons\\star.ico")
-        self.openStarIcon = QtGui.QIcon("icons\\openStar.ico")
-        self.passIcon = QtGui.QIcon("icons\\Iconsmind-Outline-Yes.ico")
-        self.failIcon = QtGui.QIcon("icons\\error.ico")
-        self.searchIcon = QtGui.QIcon("icons\\Search2.ico")
-        self.gearIcon = QtGui.QIcon("icons\\Gear.ico")
-        self.mergeIcon = QtGui.QIcon("icons\\Merge.ico")
-        self.blankIcon = QtGui.QIcon()
-        self.findDlg = QtWidgets.QDialog()
-        self.findUi = Ui_findDlg(parent=self)
-        self.findUi.setupUi(self.findDlg)
-
-        self.configDialog = QtWidgets.QDialog()
-        self.configUi = Ui_configDialog(parent=self)
-        self.configUi.setupUi(self.configDialog)
 
     def selectByStatus(self, status):
         root = self.treeWidget.invisibleRootItem()
@@ -574,9 +415,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         if not index.isValid():
             return
-
-#            item = self.treeWidget.itemAt(point)
-#            name = item.text(self.col_idx['Title'])  # The text of the node.
 
         # Context menu
         menu = QtWidgets.QMenu()
@@ -1582,8 +1420,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def loadList(self, listName):
         try:
-            # self.printDispCfg(listName)
-
             fileToOpen = os.path.join(self.prefs.amDir, "romlists\\" + listName + ".txt")
             if os.path.exists(fileToOpen):
                 self.dispDict[listName].dataChanged = False
@@ -1597,8 +1433,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     line = fp.readline()
                     if line:
                         self.fileHeader = line
-                        headerlist = line.strip('# \n').split(';')
-                        for i, header in enumerate(headerlist):
+                        headerList = line.strip('# \n').split(';')
+                        for i, header in enumerate(headerList):
                             self.listHeaderIdx[header] = i
                     else:
                         print("No header for ", listName)
@@ -1624,7 +1460,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         if lineDict['Emulator'] not in self.emuDict.keys():
                             self.emuDict[lineDict['Emulator']] = 'None'
                         line = fp.readline()
-#                    self.addMenu('Emulator', self.emuDict, self.loadDisplay)
 
                 if self.firstLoad:
                     bkpFile = os.path.join(fileToOpen+".bkp")
@@ -1681,17 +1516,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 [self.prefs.mameExe, romname, "-verifyroms", "-rompath", self.mameCfg.rompath],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
 
-    #        if ret.stdout != "":
-#            linelist = list(enumerate(ret.stdout.split('\n')))
-#        else:
-#            linelist = list(enumerate(ret.stderr.split('\n')))
-#
-#        for i, l in reversed(linelist):
-#            wl = l.split(' ')
-#            if wl[0] == "romset":
-#                break
-
-#        return ret.returncode, l
             return ret.returncode
         else:
             return None
@@ -1713,9 +1537,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         except Exception as validateTreeItemExcept:
             traceback.print_exc()
             raise validateTreeItemExcept
-
-#    def msgbtn(self, i):
-#        print("Button pressed is {}".format(i.text()))
 
     def findDuplicates(self):
         try:
@@ -1793,7 +1614,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                     and self.dispDict[self.currentDisplay].
                                     romDict[child.text(self.col_idx['Name'])].lineDict['Locked'] == 'N'):
                                 child.setCheckState(self.col_idx['Title'], Qt.Unchecked)
-#            self.findDuplicates()
         except Exception as unselectClonesExcept:
             traceback.print_exc()
             raise unselectClonesExcept
