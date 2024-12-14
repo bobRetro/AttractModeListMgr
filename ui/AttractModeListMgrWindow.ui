@@ -6,16 +6,100 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>906</width>
+    <width>942</width>
     <height>525</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="1" colspan="4">
+    <item row="0" column="6">
+     <widget class="QPushButton" name="findDupButton">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Find Duplicates</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="3">
+     <widget class="QPushButton" name="expColBtn">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Expand All</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="4">
+     <widget class="QPushButton" name="uncheckedBtn">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Hide Unchecked</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="5">
+     <widget class="QPushButton" name="cloneBtn">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Uncheck Clones</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="7">
+     <widget class="QPushButton" name="clearSearchBtn">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Clear Search</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1" colspan="7">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>900</width>
+        <height>0</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="1">
      <widget class="QFrame" name="frame">
       <property name="enabled">
        <bool>true</bool>
@@ -101,41 +185,24 @@
       </widget>
      </widget>
     </item>
-    <item row="1" column="10">
-     <widget class="QPushButton" name="clearSearchBtn">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
+    <item row="0" column="2">
+     <spacer name="horizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
       </property>
-      <property name="text">
-       <string>Clear Search</string>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
       </property>
-     </widget>
-    </item>
-    <item row="1" column="9">
-     <widget class="QPushButton" name="findDupButton">
-      <property name="text">
-       <string>Find Duplicates</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="6">
-     <widget class="QPushButton" name="uncheckedBtn">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>Hide Unchecked</string>
-      </property>
-     </widget>
+     </spacer>
     </item>
     <item row="5" column="0" colspan="11">
      <widget class="QTreeWidget" name="treeWidget">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
@@ -176,58 +243,6 @@
       </column>
      </widget>
     </item>
-    <item row="1" column="7">
-     <widget class="QPushButton" name="cloneBtn">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>Uncheck Clones</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="5">
-     <widget class="QPushButton" name="expColBtn">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>Expand All</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="8">
-     <spacer name="horizontalSpacer">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>40</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="2" column="1" colspan="5">
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>900</width>
-        <height>0</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -235,7 +250,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>906</width>
+     <width>942</width>
      <height>21</height>
     </rect>
    </property>

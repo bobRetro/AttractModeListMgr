@@ -2,6 +2,7 @@ import traceback
 import subprocess
 import os.path
 import functools
+from contextlib import nullcontext
 
 import win32api
 
@@ -18,6 +19,7 @@ from ConfigDialog import Ui_configDialog
 from AmConfig import AmConfig
 from recordtype import recordtype
 from FindDialog import Ui_findDlg
+from AtractModeListMgrWindow_ui import Ui_MainWindow
 
 
 def getConfigLevel(line):
@@ -231,7 +233,148 @@ def getMameExeVersion(mameSrc, mameExe, mameDisp):
     return ''
 
 
-class Ui_MainWindow(QMainWindow):
+class MainWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setupUi(self)
+
+        self.MyMessage = QtWidgets.QLabel()
+        self.setStatusBar(self.statusbar)
+        self.statusbar.addPermanentWidget(self.MyMessage)
+
+        self.treeWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.treeWidget.customContextMenuRequested.connect(self.menuContextTree)
+
+        self.lockIcon = QtGui.QIcon("icons\\lock.ico")
+        self.unlockIcon = QtGui.QIcon("icons\\unlock.ico")
+        self.starIcon = QtGui.QIcon("icons\\star.ico")
+        self.openStarIcon = QtGui.QIcon("icons\\openStar.ico")
+        self.passIcon = QtGui.QIcon("icons\\Iconsmind-Outline-Yes.ico")
+        self.failIcon = QtGui.QIcon("icons\\error.ico")
+        self.searchIcon = QtGui.QIcon("icons\\Search2.ico")
+        self.gearIcon = QtGui.QIcon("icons\\Gear.ico")
+        self.mergeIcon = QtGui.QIcon("icons\\Merge.ico")
+        self.blankIcon = QtGui.QIcon()
+        self.findDlg = QtWidgets.QDialog()
+        self.findUi = Ui_findDlg(parent=self)
+        self.findUi.setupUi(self.findDlg)
+
+        self.configDialog = QtWidgets.QDialog()
+        self.configUi = Ui_configDialog(parent=self)
+        self.configUi.setupUi(self.configDialog)
+
+        self.connectSignalsSlots()
+
+        self.column_headers = ['Title', 'Favorite', 'Status', 'Variation', 'Rotation', 'Category', 'Emulator',
+                               'Control', 'Buttons', 'Players', 'Name', 'CloneOf',
+                               'Status (pass or fail)', 'Favorite (Y or N)', 'Locked (Y or N)']
+        self.col_idx = {}
+
+        self.headerView = QtWidgets.QHeaderView(Qt.Horizontal)
+        self.headerView.setSectionsMovable(True)
+        self.treeWidget.setHeader(self.headerView)
+
+        for idx, header in enumerate(self.column_headers):
+            self.treeWidget.headerItem().setText(idx, header)
+            self.col_idx[header] = idx
+
+        self.treeWidget.hideColumn(self.col_idx['Status (pass or fail)'])
+        self.treeWidget.hideColumn(self.col_idx['Favorite (Y or N)'])
+        self.treeWidget.hideColumn(self.col_idx['Locked (Y or N)'])
+
+        # print(self.headerView.visualIndex(1))
+        # delegate = AlignDelegate(self.treeWidget)
+        # self.treeWidget.setItemDelegateForColumn(0, delegate)
+
+        self.cloneBtn.clicked.connect(self.unselectClones)
+        self.expColBtn.clicked.connect(self.expColTree)
+        self.parentBtn.setChecked(True)
+        self.parentBtn.toggled.connect(self.toggleParentMode)
+        self.titleBtn.toggled.connect(self.toggleParentMode)
+        self.noneBtn.toggled.connect(self.toggleParentMode)
+        self.clearSearchBtn.clicked.connect(self.clearSearch)
+        self.uncheckedBtn.clicked.connect(self.toggleUncheckedHidden)
+        self.findDupButton.clicked.connect(self.findDuplicates)
+
+        self.treeWidget.itemChanged[QTreeWidgetItem, int].connect(self.treeItemChanged)
+
+        #        self.treeWidget.itemSelectionChanged.connect(self.treeItemSelected)
+
+        menubar = self.menuBar()
+        style = self.style()
+        icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_BrowserStop')))
+        exitAct = QAction(icon, 'Exit', self)
+        exitAct.setShortcut('Ctrl+Q')
+        exitAct.setStatusTip('Exit application')
+        exitAct.triggered.connect(self.closeProgram)
+
+        # icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogOpenButton')))
+        # loadAct = QAction(icon, 'Load', self)
+        # loadAct.setShortcut('Ctrl+L')
+        # loadAct.setStatusTip('Load File')
+        # loadAct.triggered.connect(lambda: self.loadTree(self.currentDisplay,
+        #   self.dispDict[self.currentDisplay].groupMode))
+
+        self.saveIcon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogSaveButton')))
+
+        self.saveAct = QAction(self.saveIcon, 'Save', self)
+        self.saveAct.setShortcut('Ctrl+S')
+        self.saveAct.setStatusTip('Save File')
+        self.saveAct.triggered.connect(self.saveChangedDisplays)
+        self.saveAct.setEnabled(False)
+
+        # saveFavAct = QAction(icon, 'Save Favorites', self)
+        # saveFavAct.setStatusTip('Save Favorites.txt')
+        # saveFavAct.triggered.connect(lambda: self.saveDisplay('Favorites'))
+
+        fileMenu = menubar.addMenu('&File')
+        # fileMenu.addAction(loadAct)
+        fileMenu.addAction(self.saveAct)
+        # fileMenu.addAction(saveFavAct)
+        # fileMenu.addAction(findAct)
+        fileMenu.addAction(exitAct)
+        fileMenu.aboutToShow.connect(self.updateFileMenu)
+
+        selFailedAct = QAction(icon, 'Select Failed', self)
+        selFailedAct.setShortcut('Ctrl+B')
+        selFailedAct.setStatusTip('Select Failed')
+        selFailedAct.triggered.connect(lambda: self.selectByStatus('fail'))
+
+        selPassedAct = QAction(icon, 'Select Passed', self)
+        selPassedAct.setShortcut('Ctrl+G')
+        selPassedAct.setStatusTip('Select Passed')
+        selPassedAct.triggered.connect(lambda: self.selectByStatus('pass'))
+
+        self.favoritesAct = QAction(self.mergeIcon, 'Merge Favorites', self)
+        self.favoritesAct.setStatusTip('Copy favorites from all displays to the Favorites display')
+        self.favoritesAct.triggered.connect(self.updateFavorites)
+
+        editMenu = menubar.addMenu('&Edit')
+        configAct = QAction(self.gearIcon, 'Preferences', self)
+        configAct.setShortcut('Ctrl+P')
+        configAct.setStatusTip('Set Preferences')
+        configAct.triggered.connect(self.showPreferencesNoRsp)
+        editMenu.addAction(configAct)
+
+        findAct = QAction(self.searchIcon, 'Find', self)
+        findAct.setShortcut('Ctrl+F')
+        findAct.setStatusTip('Find')
+        findAct.triggered.connect(self.showFindDlg)
+        editMenu.addAction(findAct)
+
+        favMenu = menubar.addMenu('&Favorites')
+        favMenu.addAction(self.favoritesAct)
+        # editMenu.addAction(selFailedAct)
+        # editMenu.addAction(selPassedAct)
+
+        self.treeWidget.setSortingEnabled(True)
+        self.retranslateUi(self)
+
+        # QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def connectSignalsSlots(self):
+        return
+
     fileHeader = str()
     romItem = recordtype('romItem', [('lineDict', {})])
     listHeaderIdx = dict()
@@ -378,122 +521,6 @@ class Ui_MainWindow(QMainWindow):
         self.configDialog = QtWidgets.QDialog()
         self.configUi = Ui_configDialog(parent=self)
         self.configUi.setupUi(self.configDialog)
-
-    def setupUi(self):
-        self._windowLayout()
-        # Dictates the order of the columns
-        self.column_headers = ['Title', 'Favorite', 'Status', 'Variation', 'Rotation', 'Category', 'Emulator',
-                               'Control', 'Buttons', 'Players', 'Name', 'CloneOf',
-                               'Status (pass or fail)', 'Favorite (Y or N)', 'Locked (Y or N)']
-        self.col_idx = {}
-
-        self.headerView = QtWidgets.QHeaderView(Qt.Horizontal)
-        self.headerView.setSectionsMovable(True)
-        self.treeWidget.setHeader(self.headerView)
-
-        for idx, header in enumerate(self.column_headers):
-            self.treeWidget.headerItem().setText(idx, header)
-            self.col_idx[header] = idx
-
-        self.treeWidget.hideColumn(self.col_idx['Status (pass or fail)'])
-        self.treeWidget.hideColumn(self.col_idx['Favorite (Y or N)'])
-        self.treeWidget.hideColumn(self.col_idx['Locked (Y or N)'])
-
-        # print(self.headerView.visualIndex(1))
-        # delegate = AlignDelegate(self.treeWidget)
-        # self.treeWidget.setItemDelegateForColumn(0, delegate)
-
-        self.cloneBtn.clicked.connect(self.unselectClones)
-        self.expColBtn.clicked.connect(self.expColTree)
-        self.parentBtn.setChecked(True)
-        self.parentBtn.toggled.connect(self.toggleParentMode)
-        self.titleBtn.toggled.connect(self.toggleParentMode)
-        self.noneBtn.toggled.connect(self.toggleParentMode)
-        self.clearSearchBtn.clicked.connect(self.clearSearch)
-        self.uncheckedBtn.clicked.connect(self.toggleUncheckedHidden)
-        self.findDupButton.clicked.connect(self.findDuplicates)
-
-        self.treeWidget.itemChanged[QTreeWidgetItem, int].connect(self.treeItemChanged)
-
-#        self.treeWidget.itemSelectionChanged.connect(self.treeItemSelected)
-        
-        menubar = self.menuBar()
-        style = self.style()
-        icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_BrowserStop')))
-        exitAct = QAction(icon, 'Exit', self)
-        exitAct.setShortcut('Ctrl+Q')
-        exitAct.setStatusTip('Exit application')
-        exitAct.triggered.connect(self.closeProgram)
-
-        # icon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogOpenButton')))
-        # loadAct = QAction(icon, 'Load', self)
-        # loadAct.setShortcut('Ctrl+L')
-        # loadAct.setStatusTip('Load File')
-        # loadAct.triggered.connect(lambda: self.loadTree(self.currentDisplay,
-        #   self.dispDict[self.currentDisplay].groupMode))
-
-        self.saveIcon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogSaveButton')))
-        
-        self.saveAct = QAction(self.saveIcon, 'Save', self)
-        self.saveAct.setShortcut('Ctrl+S')
-        self.saveAct.setStatusTip('Save File')
-        self.saveAct.triggered.connect(self.saveChangedDisplays)
-        self.saveAct.setEnabled(False)
-
-        # saveFavAct = QAction(icon, 'Save Favorites', self)
-        # saveFavAct.setStatusTip('Save Favorites.txt')
-        # saveFavAct.triggered.connect(lambda: self.saveDisplay('Favorites'))
-
-        fileMenu = menubar.addMenu('&File')
-        # fileMenu.addAction(loadAct)
-        fileMenu.addAction(self.saveAct)
-        # fileMenu.addAction(saveFavAct)
-        # fileMenu.addAction(findAct)
-        fileMenu.addAction(exitAct)
-        fileMenu.aboutToShow.connect(self.updateFileMenu)
-
-        selFailedAct = QAction(icon, 'Select Failed', self)
-        selFailedAct.setShortcut('Ctrl+B')
-        selFailedAct.setStatusTip('Select Failed')
-        selFailedAct.triggered.connect(lambda: self.selectByStatus('fail'))
-
-        selPassedAct = QAction(icon, 'Select Passed', self)
-        selPassedAct.setShortcut('Ctrl+G')
-        selPassedAct.setStatusTip('Select Passed')
-        selPassedAct.triggered.connect(lambda: self.selectByStatus('pass'))
-
-        self.favoritesAct = QAction(self.mergeIcon, 'Merge Favorites', self)
-        self.favoritesAct.setStatusTip('Copy favorites from all displays to the Favorites display')
-        self.favoritesAct.triggered.connect(self.updateFavorites)
-
-        editMenu = menubar.addMenu('&Edit')
-        configAct = QAction(self.gearIcon, 'Preferences', self)
-        configAct.setShortcut('Ctrl+P')
-        configAct.setStatusTip('Set Preferences')
-        configAct.triggered.connect(self.showPreferencesNoRsp)
-        editMenu.addAction(configAct)
-
-        findAct = QAction(self.searchIcon, 'Find', self)
-        findAct.setShortcut('Ctrl+F')
-        findAct.setStatusTip('Find')
-        findAct.triggered.connect(self.showFindDlg)
-        editMenu.addAction(findAct)
-
-        favMenu = menubar.addMenu('&Favorites')
-        favMenu.addAction(self.favoritesAct)
-        # editMenu.addAction(selFailedAct)
-        # editMenu.addAction(selPassedAct)
-
-        self.treeWidget.setSortingEnabled(True)
-        self.retranslateUi()
-
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-        # for i in self.dispDict.keys():
-        #     print(i)
-        #     for r in self.dispDict[i].romDict.keys():
-        #         if self.dispDict[i].romDict[r].favorite == 'Y':
-        #             print('   '+r)
 
     def selectByStatus(self, status):
         root = self.treeWidget.invisibleRootItem()
@@ -753,20 +780,6 @@ class Ui_MainWindow(QMainWindow):
 #    def keyPressEvent(self, e):
 #        if e.key() == Qt.Key_Escape:
 #            self.close()
-
-    def retranslateUi(self):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate(   "MainWindow", self.windowTitle))
-        self.cloneBtn.setText(_translate("MainWindow", "Uncheck Clones"))
-        self.treeWidget.setSortingEnabled(True)
-        self.clearSearchBtn.setText(_translate("MainWindow", "Clear Search"))
-        self.expColBtn.setText(_translate("MainWindow", "Expand All"))
-        self.label.setText(_translate("MainWindow", "Group Mode"))
-        self.parentBtn.setText(_translate("MainWindow", "Parent"))
-        self.titleBtn.setText(_translate("MainWindow", "Title"))
-        self.noneBtn.setText(_translate("MainWindow", "None"))
-        self.uncheckedBtn.setText(_translate("MainWindow", "Hide Unchecked"))
-        self.findDupButton.setText(_translate("MainWindow", "Find Duplicates"))
 
     def updateFileMenu(self):
         changedList = self.getChangedDispList()
@@ -1883,11 +1896,10 @@ if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle('Fusion')
-    MainWindow = Ui_MainWindow()
-    MainWindow.setupUi()
-    MainWindow.show()
-    MainWindow.loadPrefs()
-    MainWindow.loadAllDisplays()
+    mainWindow = MainWindow()
+    mainWindow.show()
+    mainWindow.loadPrefs()
+    mainWindow.loadAllDisplays()
 
     try:
         sys.exit(app.exec_())

@@ -1,1 +1,1 @@
-py -m PyQt5.uic.pyuic AttractModeListMgrWindow.ui -o window.py -x
+pyuic5 -o AttractModeListMgrWindow_ui.py ui/AttractModeListMgrWindow.ui
