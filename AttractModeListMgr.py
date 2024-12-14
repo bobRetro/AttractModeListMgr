@@ -2,8 +2,8 @@ import traceback
 import subprocess
 import os.path
 import functools
-import win32api
 
+from win32api import GetFileVersionInfo, HIWORD, LOWORD
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QStyle, QMenu, QAction, QDialog, QMessageBox, QMainWindow, QFileDialog, QTreeWidgetItem
@@ -12,7 +12,7 @@ from ConfigDialog import Ui_configDialog
 from AmConfig import AmConfig
 from recordtype import recordtype
 from FindDialog import Ui_findDlg
-from AtractModeListMgrWindow_ui import Ui_MainWindow
+from AttractModeListMgrWindow_ui import Ui_MainWindow
 
 
 def getConfigLevel(line):
@@ -178,19 +178,19 @@ def loadAmConfig(fileToOpen):
 
 def get_version_number(filename):
     try:
-        info = win32api.GetFileVersionInfo(filename, "\\")
+        info = GetFileVersionInfo(filename, "\\")
         ms = info['FileVersionMS']
         # ls = info['FileVersionLS']
-        return str(win32api.HIWORD(ms))+'.'+str(win32api.LOWORD(ms))
+        return str(HIWORD(ms))+'.'+str(LOWORD(ms))
     finally:
         return "Unknown version"
 
 
 def getFileDescription(windows_exe):
     try:
-        language, codepage = win32api.GetFileVersionInfo(windows_exe, '\\VarFileInfo\\Translation')[0]
+        language, codepage = GetFileVersionInfo(windows_exe, '\\VarFileInfo\\Translation')[0]
         stringFileInfo = u'\\StringFileInfo\\%04X%04X\\%s' % (language, codepage, "FileDescription")
-        description = win32api.GetFileVersionInfo(windows_exe, stringFileInfo)
+        description = GetFileVersionInfo(windows_exe, stringFileInfo)
     except:
         description = "unknown"
 
@@ -201,20 +201,23 @@ def getMameExeVersion(mameSrc, mameExe, mameDisp):
     if mameExe != '':
         if mameExe.find('.exe') == -1:
             mameExe = mameExe + '.exe'
-        if os.path.exists(os.path.join(mameExe)) and getFileDescription(mameExe) == 'MAME':
-            mameVersionText = getMameVersion(mameExe)
-            versionWords = [item.strip(' )').upper() for item in mameVersionText.split('(')]
+        if os.path.exists(os.path.join(mameExe)):
+            if getFileDescription(mameExe) == 'MAME':
+                mameVersionText = getMameVersion(mameExe)
+                versionWords = [item.strip(' )').upper() for item in mameVersionText.split('(')]
 
-            if len(versionWords) > 1:
-                if versionWords[1][0:4] == 'MAME':
-                    print(mameSrc+': Found Mame ' + mameExe + ' version: ' + versionWords[0])
+                if len(versionWords) > 1:
+                    if versionWords[1][0:4] == 'MAME':
+                        print(mameSrc+': Found Mame ' + mameExe + ' version: ' + versionWords[0])
+                    else:
+                        print(mameSrc+': Non-Mame executable found (' + mameExe + ') version: ' + versionWords[0])
                     if mameDisp.cfgDict['validateExe'] == 'Unknown':
                         mameDisp.cfgDict['validateExe'] = mameExe
-                else:
-                    print(mameSrc+': Non-Mame executable found (' + mameExe + ') version: ' + versionWords[0])
-                return versionWords[0]
+                    return versionWords[0]
+            else:
+                print(mameSrc+': executable ('+mameExe+') does not appear to be a MAME build: ' + getFileDescription(mameExe))
         else:
-            print(mameSrc+': Executable ('+mameExe+') does not appear to be a MAME build')
+            print(mameSrc+' executable ' + os.path.join(mameExe) + ' does not exist')
     return ''
 
 
@@ -315,14 +318,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         exitAct = QAction(icon, 'Exit', self)
         exitAct.setShortcut('Ctrl+Q')
         exitAct.setStatusTip('Exit application')
-        exitAct.triggered.connect(self.closeProgram)
+        exitAct.triggered.connect(self.closeProgram) # type: ignore
 
         self.saveIcon = QtGui.QIcon(style.standardIcon(getattr(QStyle, 'SP_DialogSaveButton')))
 
         self.saveAct = QAction(self.saveIcon, 'Save', self)
         self.saveAct.setShortcut('Ctrl+S')
         self.saveAct.setStatusTip('Save File')
-        self.saveAct.triggered.connect(self.saveChangedDisplays)
+        self.saveAct.triggered.connect(self.saveChangedDisplays) # type: ignore
         self.saveAct.setEnabled(False)
 
         fileMenu = menubar.addMenu('&File')
@@ -333,28 +336,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         selFailedAct = QAction(icon, 'Select Failed', self)
         selFailedAct.setShortcut('Ctrl+B')
         selFailedAct.setStatusTip('Select Failed')
-        selFailedAct.triggered.connect(lambda: self.selectByStatus('fail'))
+        selFailedAct.triggered.connect(lambda: self.selectByStatus('fail')) # type: ignore
 
         selPassedAct = QAction(icon, 'Select Passed', self)
         selPassedAct.setShortcut('Ctrl+G')
         selPassedAct.setStatusTip('Select Passed')
-        selPassedAct.triggered.connect(lambda: self.selectByStatus('pass'))
+        selPassedAct.triggered.connect(lambda: self.selectByStatus('pass')) # type: ignore
 
         self.favoritesAct = QAction(self.mergeIcon, 'Merge Favorites', self)
         self.favoritesAct.setStatusTip('Copy favorites from all displays to the Favorites display')
-        self.favoritesAct.triggered.connect(self.updateFavorites)
+        self.favoritesAct.triggered.connect(self.updateFavorites) # type: ignore
 
         editMenu = menubar.addMenu('&Edit')
         configAct = QAction(self.gearIcon, 'Preferences', self)
         configAct.setShortcut('Ctrl+P')
         configAct.setStatusTip('Set Preferences')
-        configAct.triggered.connect(self.showPreferencesNoRsp)
+        configAct.triggered.connect(self.showPreferencesNoRsp) # type: ignore
         editMenu.addAction(configAct)
 
         findAct = QAction(self.searchIcon, 'Find', self)
         findAct.setShortcut('Ctrl+F')
         findAct.setStatusTip('Find')
-        findAct.triggered.connect(self.showFindDlg)
+        findAct.triggered.connect(self.showFindDlg) # type: ignore
         editMenu.addAction(findAct)
 
         favMenu = menubar.addMenu('&Favorites')
@@ -451,10 +454,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for a in dispMenu.actions():
             dispMenu.removeAction(a)
 
-        # Add the diplays as submenus
+        # Add the displays as submenus
         for s in subMenuDict.keys():
             dispAct = QAction(s, self)
-            dispAct.triggered.connect(functools.partial(connectAction, s))
+            dispAct.triggered.connect(functools.partial(connectAction, s)) # type: ignore
             if menuName == 'Display':
                 self.dispDict[s].action = dispAct
 
@@ -663,7 +666,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.setTreeItemLineDictVal(item, 'LstLine', newLine)
 
     def toggleParentMode(self):
-        radioButton = self.sender()
+        radioButton: QtWidgets.QRadioButton = self.sender() #type: ignore
         if radioButton.isChecked():
             if radioButton.objectName() == 'parentBtn':
                 self.dispDict[self.currentDisplay].groupMode = 'parent'
@@ -692,10 +695,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.setUncheckedHidden(True)
         if self.searchOn and self.findField != "" and self.findText != "":
             self.searchList(self.findField, self.findText)
-
-    def searchLineClicked(self):
-        self.searchBtn.setDefault(True)
-        self.searchBtn.setAutoDefault(True)
 
     def getLineField(self, line, field):
         if field in self.listHeaderIdx.keys():
@@ -779,7 +778,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for tree_item in selected_items:
             if tree_item.parent() or self.dispDict[self.currentDisplay].groupMode == 'none':
                 if status == 'toggle':
-                    self.setItemLocked(tree_item, self.self.dispDict[self.currentDisplay](tree_item, 'Locked') == 'N')
+                    self.setItemLocked(tree_item, self.dispDict[self.currentDisplay](tree_item, 'Locked') == 'N')
                 else:
                     self.setItemLocked(tree_item, status == 'lock')
 
@@ -1046,7 +1045,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         options |= QFileDialog.DontUseNativeDialog
         fileName = str(QFileDialog.getExistingDirectory())
         if fileName:
-            self.amDir.setText(os.path.normpath(fileName))
+            self.prefs.amDir.setText(os.path.normpath(fileName))
 
     def openMameExeDialog(self):
         options = QFileDialog.Options()
@@ -1058,7 +1057,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             tempDir = 'c:\\'
         fileName, _ = QFileDialog.getOpenFileName(self, 'Mame Exe', tempDir, "Exe files (*.exe)")
         if os.path.isfile(fileName):
-            self.mameExe.setText(os.path.normpath(fileName))
+            self.prefs.mameExe.setText(os.path.normpath(fileName))
 
     def addRemoveLineFieldVal(self, line, field, addVal, remVal):
         newLine = ""
@@ -1182,7 +1181,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.saveAlm(dispName)
             self.saveTag(dispName)
             self.dispDict[dispName].dataChanged = False
-            print('Saved ' + dispName + ' to ' + fileToOpen)
+            print('Saved ' + dispName + ' to ' + str(fileToOpen))
             if dispName == 'Favorites':
                 if self.dataChanged():
                     self.saveAct.setEnabled(False)
@@ -1462,7 +1461,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         line = fp.readline()
 
                 if self.firstLoad:
-                    bkpFile = os.path.join(fileToOpen+".bkp")
+                    bkpFile = os.path.join(str(fileToOpen)+".bkp")
                     with open(bkpFile, "w") as of:
                         of.write(self.fileHeader)
                         for romItem in self.dispDict[listName].romDict.values():
@@ -1481,7 +1480,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                 line = fp.readline()
 
                 if self.firstLoad:
-                    bkpFile = os.path.join(fileToOpen+".bkp")
+                    bkpFile = os.path.join(str(fileToOpen)+".bkp")
                     with open(bkpFile, "w") as of:
                         for fav_rom in self.dispDict[listName].favList:
                             of.write(fav_rom+'\n')
