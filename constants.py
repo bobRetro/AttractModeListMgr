@@ -1,0 +1,28 @@
+ALM_FIELD_NAME = 'Name'
+ALM_FIELD_EXCLUDED = 'Excluded'
+ALM_FIELD_LOCKED = 'Locked'
+ALM_FIELD_STATUS = 'Status'
+
+AM_FIELD_EXTRA = 'Extra'
+AM_FIELD_TITLE = 'Title'
+AM_FIELD_VARIATION = 'Variation'
+AM_FIELD_ROTATION = 'Rotation'
+AM_FIELD_CATEGORY = 'Category'
+AM_FIELD_EMULATOR = 'Emulator'
+AM_FIELD_CONTROL = 'Control'
+AM_FIELD_BUTTONS = 'Buttons'
+AM_FIELD_PLAYERS = 'Players'
+AM_FIELD_NAME = 'Name'
+AM_FIELD_CLONE_OF = 'CloneOf'
+AM_FIELD_FAVORITE = 'Favorite'
+AM_FIELD_HIDDEN_STATUS = 'Status (pass or fail)'
+AM_FIELD_HIDDEN_FAVORITE = 'Favorite (Y or N)'
+AM_FIELD_HIDDEN_LOCKED = 'Locked (Y or N)'
+
+AM_VALUE_EXCLUDED = 'excluded'
+
+BTN_UNCHECKED_LABEL_SHOW = 'Show Unchecked'
+BTN_UNCHECKED_LABEL_HIDE = 'Hide Unchecked'
+
+DISPLAY_FAVORITES = 'Favorites'
+DISPLAY_MAME = 'Mame'

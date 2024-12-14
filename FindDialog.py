@@ -1,4 +1,5 @@
 import traceback
+import constants
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QDialog
@@ -46,19 +47,19 @@ class Ui_findDlg(object):
         self.fieldComboBox = QtWidgets.QComboBox(findDlg)
         self.fieldComboBox.setGeometry(QtCore.QRect(50, 11, 241, 22))
         self.fieldComboBox.setObjectName("fieldComboBox")
-        self.fieldComboBox.addItem('Title')
-        self.fieldComboBox.addItem('Variation')
-        self.fieldComboBox.addItem('Name')
-        self.fieldComboBox.addItem('Category')
-        self.fieldComboBox.addItem('Status')
-        self.fieldComboBox.addItem('Rotation')
-        self.fieldComboBox.addItem('Control')
-        self.fieldComboBox.addItem('Buttons')
+        self.fieldComboBox.addItem(constants.AM_FIELD_TITLE)
+        self.fieldComboBox.addItem(constants.AM_FIELD_VARIATION)
+        self.fieldComboBox.addItem(constants.AM_FIELD_NAME)
+        self.fieldComboBox.addItem(constants.AM_FIELD_CATEGORY)
+        self.fieldComboBox.addItem(constants.ALM_FIELD_STATUS)
+        self.fieldComboBox.addItem(constants.AM_FIELD_ROTATION)
+        self.fieldComboBox.addItem(constants.AM_FIELD_CONTROL)
+        self.fieldComboBox.addItem(constants.AM_FIELD_BUTTONS)
         self.fieldComboBox.addItem('Manufacturer')
         self.fieldComboBox.addItem('Year')
-        self.fieldComboBox.addItem('Favorite (Y or N)')
-        self.fieldComboBox.addItem('Status (pass or fail)')
-        self.fieldComboBox.addItem('Locked (Y or N)')
+        self.fieldComboBox.addItem(constants.AM_FIELD_HIDDEN_FAVORITE)
+        self.fieldComboBox.addItem(constants.AM_FIELD_HIDDEN_STATUS)
+        self.fieldComboBox.addItem(constants.AM_FIELD_HIDDEN_LOCKED)
 
         self.fieldLabel = QtWidgets.QLabel(findDlg)
         self.fieldLabel.setGeometry(QtCore.QRect(10, 13, 31, 16))

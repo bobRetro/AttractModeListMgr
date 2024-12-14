@@ -5,11 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b4517a6c-0ceb-40c7-9a38-325443a0547f" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/constants.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/AtractModeListMgrWindow_ui.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/AttractModeListMgr.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgr.cfg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AttractModeListMgr.py" beforeDir="false" afterPath="$PROJECT_DIR$/AttractModeListMgr.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/AttractModeListMgrWindow.ui" beforeDir="false" afterPath="$PROJECT_DIR$/ui/AttractModeListMgrWindow.ui" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FindDialog.py" beforeDir="false" afterPath="$PROJECT_DIR$/FindDialog.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,6 +17,9 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/AttractModeListMgr.py" root0="SKIP_INSPECTION" />
   </component>
   <component name="ProjectId" id="1o1cdYrLvaojKYkYyLlCpjDAjQf" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
